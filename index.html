@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>학급 자리 & 모둠 배치 프로그램</title>
+  <!-- SheetJS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 900px;
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    h1 {
+      margin-top: 0;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    select, input, button {
+      padding: 8px 12px;
+      font-size: 0.95rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+    }
+    button {
+      background-color: var(--primary);
+      color: white;
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+    button.secondary {
+      background-color: #10b981;
+    }
+    button.secondary:hover {
+      background-color: #059669;
+    }
+    .board-indicator {
+      text-align: center;
+      padding: 10px;
+      background: #e2e8f0;
+      border-radius: 6px;
+      font-weight: bold;
+      margin: 20px 0;
+      letter-spacing: 2px;
+    }
+    .grid {
+      display: grid;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .seat {
+      width: 80px;
+      height: 70px;
+      background: #eff6ff;
+      border: 2px solid #bfdbfe;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #1e40af;
+    }
+    .seat.empty {
+      background: transparent;
+      border: 2px dashed #cbd5e1;
+      color: #94a3b8;
+    }
+    .seat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    /* 시크릿 모달 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      width: 400px;
+      max-width: 90%;
+    }
+    .modal h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      color: #dc2626;
+    }
+    .rules-list {
+      margin: 12px 0;
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .rule-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>자리 및 모둠 배치 프로그램</h1>
+
+  <div class="controls">
+    <label>인원 수:
+      <select id="totalStudents">
+        <option value="24">24명</option>
+        <option value="25">25명</option>
+        <option value="26">26명</option>
+        <option value="27">27명</option>
+        <option value="28" selected>28명</option>
+        <option value="29">29명</option>
+        <option value="30">30명</option>
+      </select>
+    </label>
+
+    <label>형태:
+      <select id="seatMode">
+        <option value="pair">짝꿍 (2인 1조)</option>
+        <option value="single">독립 (1인 1조)</option>
+        <option value="group">모둠 편성 (4인 기준)</option>
+      </select>
+    </label>
+
+    <button onclick="generateSeats()">자리 배치 실행</button>
+    <button class="secondary" onclick="exportToExcel()">엑셀 다운로드</button>
+  </div>
+
+  <div class="board-indicator">[ 칠 판 ]</div>
+  <div id="seatGrid" class="grid"></div>
+</div>
+
+<!-- 시크릿 모달 -->
+<div id="secretModal" class="modal-overlay">
+  <div class="modal">
+    <h2>🔒 교사 전용 격리 설정</h2>
+    <p style="font-size: 0.85rem; color: #64748b;">
+      좌우/상하로 바로 붙으면 안 되는 학생 번호 쌍을 등록하세요.
+    </p>
+    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+      <input type="number" id="stuA" placeholder="번호 1" style="width: 80px;">
+      <input type="number" id="stuB" placeholder="번호 2" style="width: 80px;">
+      <button type="button" onclick="addRule()">추가</button>
+    </div>
+    <div class="rules-list" id="rulesList"></div>
+    <div style="text-align: right; margin-top: 12px;">
+      <button type="button" onclick="toggleModal(false)">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentGrid = [];
+  let separatedPairs = [];
+
+  // 시크릿 키: Ctrl + Shift + S
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+      e.preventDefault();
+      toggleModal(true);
+    }
+  });
+
+  function toggleModal(show) {
+    const modal = document.getElementById('secretModal');
+    modal.classList.toggle('active', show);
+  }
+
+  function addRule() {
+    const a = parseInt(document.getElementById('stuA').value);
+    const b = parseInt(document.getElementById('stuB').value);
+    if (!a || !b || a === b) return;
+
+    // 중복 검사
+    const exists = separatedPairs.some(([p1, p2]) => (p1 === a && p2 === b) || (p1 === b && p2 === a));
+    if (!exists) {
+      separatedPairs.push([Math.min(a, b), Math.max(a, b)]);
+      updateRuleUI();
+    }
+    document.getElementById('stuA').value = '';
+    document.getElementById('stuB').value = '';
+  }
+
+  function removeRule(index) {
+    separatedPairs.splice(index, 1);
+    updateRuleUI();
+  }
+
+  function updateRuleUI() {
+    const list = document.getElementById('rulesList');
+    list.innerHTML = '';
+    separatedPairs.forEach(([a, b], idx) => {
+      const div = document.createElement('div');
+      div.className = 'rule-item';
+      div.innerHTML = `<span>${a}번 ⟷ ${b}번 분리</span>
+                       <button style="padding: 2px 6px; font-size: 0.75rem; background: #ef4444;" onclick="removeRule(${idx})">삭제</button>`;
+      list.appendChild(div);
+    });
+  }
+
+  function getLayoutDimensions(count, mode) {
+    if (mode === 'single') {
+      const cols = 6;
+      const rows = Math.ceil(count / cols);
+      return { rows, cols };
+    } else if (mode === 'pair') {
+      const cols = 6; // 2명씩 3개 분단
+      const rows = Math.ceil(count / cols);
+      return { rows, cols };
+    } else { // group (모둠)
+      const cols = 6;
+      const rows = Math.ceil(count / cols);
+      return { rows, cols };
+    }
+  }
+
+  function isValidPlacement(board, rows, cols) {
+    const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]]; // 상하좌우
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const current = board[r][c];
+        if (!current) continue;
+
+        for (const [dr, dc] of directions) {
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+            const neighbor = board[nr][nc];
+            if (!neighbor) continue;
+            for (const [p1, p2] of separatedPairs) {
+              if ((current === p1 && neighbor === p2) || (current === p2 && neighbor === p1)) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  function generateSeats() {
+    const count = parseInt(document.getElementById('totalStudents').value);
+    const mode = document.getElementById('seatMode').value;
+    const { rows, cols } = getLayoutDimensions(count, mode);
+
+    let students = Array.from({ length: count }, (_, i) => i + 1);
+    let attempts = 0;
+    let success = false;
+    let bestBoard = null;
+
+    // 분리 제약 조건을 만족할 때까지 셔플 (최대 10,000회 시도)
+    while (attempts < 10000) {
+      attempts++;
+      // Fisher-Yates Shuffle
+      for (let i = students.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [students[i], students[j]] = [students[j], students[i]];
+      }
+
+      let board = Array.from({ length: rows }, () => Array(cols).fill(null));
+      let idx = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (idx < count) {
+            board[r][c] = students[idx++];
+          }
+        }
+      }
+
+      if (isValidPlacement(board, rows, cols)) {
+        bestBoard = board;
+        success = true;
+        break;
+      }
+    }
+
+    if (!success) {
+      alert("지정된 분리 조건이 너무 많아 조건을 완벽히 만족하는 배치를 찾지 못했습니다. 조건을 조절해주세요.");
+      return;
+    }
+
+    currentGrid = bestBoard;
+    renderGrid(bestBoard, rows, cols, mode);
+  }
+
+  function renderGrid(board, rows, cols, mode) {
+    const gridEl = document.getElementById('seatGrid');
+    gridEl.innerHTML = '';
+    
+    // 짝꿍 모드일 경우 가운데 통로 간격을 주기 위한 grid-template-columns 설정
+    if (mode === 'pair') {
+      gridEl.style.gridTemplateColumns = 'repeat(2, 80px) 24px repeat(2, 80px) 24px repeat(2, 80px)';
+    } else {
+      gridEl.style.gridTemplateColumns = `repeat(${cols}, 80px)`;
+    }
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        // 통로 삽입 처리
+        if (mode === 'pair' && (c === 2 || c === 4)) {
+          const corridor = document.createElement('div');
+          corridor.style.width = '24px';
+          gridEl.appendChild(corridor);
+        }
+
+        const student = board[r][c];
+        const cell = document.createElement('div');
+        cell.className = `seat ${student ? '' : 'empty'}`;
+        
+        if (student) {
+          cell.innerHTML = `<span class="seat-label">학생</span>${student}번`;
+        } else {
+          cell.innerHTML = `<span class="seat-label">빈자리</span>-`;
+        }
+        gridEl.appendChild(cell);
+      }
+    }
+  }
+
+  function exportToExcel() {
+    if (!currentGrid || currentGrid.length === 0) {
+      alert("먼저 자리 배치를 실행해주세요.");
+      return;
+    }
+
+    const wsData = [["[ 칠 판 ]"]];
+    currentGrid.forEach(row => {
+      wsData.push(row.map(val => val ? `${val}번` : '빈자리'));
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, "자리배치");
+    XLSX.writeFile(wb, "학급_자리배치결과.xlsx");
+  }
+
+  // 초기 렌더링
+  generateSeats();
+</script>
+</body>
+</html>
