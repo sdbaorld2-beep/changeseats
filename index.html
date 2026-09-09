@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학급 자리 & 모둠 관리 시스템</title>
+  <!-- 1버전에서 완벽 작동했던 SheetJS 원본 라이브러리 복구 -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --primary: #2563eb;
@@ -147,7 +149,7 @@
     }
     .student-tag:hover { background: #d8b4fe; }
 
-    /* 자리 배치 */
+    /* 자리 배치 뷰 */
     .board-indicator {
       text-align: center; padding: 6px; background: #334155; color: #f8fafc;
       border-radius: 6px; font-weight: bold; margin: 12px auto; max-width: 320px;
@@ -194,11 +196,11 @@
     .g-slot.rolling { background: #fef08a; border-color: #f59e0b; color: #b45309; }
     .g-slot.locked { animation: popIn 0.3s ease-out; }
 
-    /* 모달 공통 */
+    /* 교사 비밀 모달 */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
     .modal-overlay.active { display: flex; }
-    .modal { background: white; padding: 20px; border-radius: 12px; width: 460px; max-width: 95%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); }
-    .modal h2 { margin-top: 0; font-size: 1.15rem; color: #1e293b; margin-bottom: 12px; }
+    .modal { background: white; padding: 20px; border-radius: 12px; width: 440px; max-width: 95%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); }
+    .modal h2 { margin-top: 0; font-size: 1.15rem; color: #dc2626; margin-bottom: 12px; }
     
     .sec-tabs { display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
     .sec-tab-btn { background: none; border: none; padding: 6px 12px; font-size: 0.9rem; color: #64748b; font-weight: bold; border-bottom: 3px solid transparent; cursor: pointer; }
@@ -210,21 +212,6 @@
     .rules-list { margin-top: 8px; max-height: 140px; overflow-y: auto; border: 1px solid var(--border); padding: 6px; border-radius: 6px; background: #f8fafc; }
     .rule-item { display: flex; justify-content: space-between; align-items: center; padding: 4px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
     .rule-item:last-child { border-bottom: none; }
-
-    /* 엑셀 내보내기 전용 모달 영역 */
-    .export-textarea {
-      width: 100%;
-      height: 180px;
-      font-family: monospace;
-      font-size: 0.9rem;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      box-sizing: border-box;
-      resize: vertical;
-      background: #f8fafc;
-      white-space: pre;
-    }
   </style>
 </head>
 <body>
@@ -262,7 +249,7 @@
     </div>
 
     <button class="sub-btn" onclick="resetAll()">처음부터 다시</button>
-    <button class="excel-btn" onclick="openExportModal()">📊 엑셀 내보내기 / 복사</button>
+    <button class="excel-btn" onclick="exportToExcel()">엑셀 다운로드</button>
   </div>
 
   <!-- 자리 바꾸기 -->
@@ -297,10 +284,10 @@
       </div>
 
       <div id="seatStep3" class="step-action-bar" style="display: none;">
-        <span style="font-size: 0.85rem; color: #475569;">🎉 남은 인원 전체를 무작위로 추첨합니다. (비밀 분리 조건 적용)</span>
+        <span style="font-size: 0.85rem; color: #475569;">🎉 남은 인원 전체를 무작위로 추첨하여 배치를 완료합니다.</span>
         <div style="display: flex; gap: 6px;">
           <button class="sub-btn" onclick="moveSeatStep(2)">⬅ 2단계</button>
-          <button id="btnRunFinal" onclick="runFinalDraw()">🔥 전체 자리 추첨!</button>
+          <button id="btnRunFinal" onclick="runFinalDraw()">🔥 전체 자리 추첨 시작!</button>
         </div>
       </div>
     </div>
@@ -332,7 +319,7 @@
       </div>
 
       <div id="grpStep2" class="step-action-bar" style="display: none;">
-        <span style="font-size: 0.85rem; color: #475569;">🎉 설정된 구조에 맞게 전체 모둠 추첨을 진행합니다.<br>(F2 교사 모드에서 설정한 비밀 고정/분리는 몰래 적용됩니다.)</span>
+        <span style="font-size: 0.85rem; color: #475569;">🎉 설정된 모둠 구조에 맞춰 추첨을 진행합니다.</span>
         <div style="display: flex; gap: 6px;">
           <button class="sub-btn" onclick="moveGroupStep(1)">⬅ 1단계</button>
           <button id="btnRunGroupFinal" onclick="runGroupDraw()">🔥 모둠 전체 추첨 시작!</button>
@@ -343,10 +330,10 @@
   </div>
 </div>
 
-<!-- 교사 비밀 모달 (F2) -->
+<!-- 교사 전용 비밀 모달 (F2) -->
 <div id="secretModal" class="modal-overlay">
   <div class="modal">
-    <h2 style="color: #dc2626;">🔒 교사 전용 비밀 설정</h2>
+    <h2>🔒 교사 전용 비밀 설정</h2>
     
     <div class="sec-tabs">
       <button class="sec-tab-btn active" onclick="switchSecTab('sep')">공통: 분리(찢기)</button>
@@ -366,7 +353,7 @@
 
     <div id="secTabFix" class="sec-content">
       <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">
-        특정 모둠에 필수로 넣을 학생 번호 (학생 화면에선 빈칸으로 보이다가 추첨 시 당첨됨)
+        특정 모둠에 필수로 넣을 학생 번호 (학생 화면에선 보이지 않으며 추첨 시 당첨됨)
       </p>
       <div style="display: flex; gap: 6px;">
         <select id="secFixGroupSelect" style="width: 80px;"></select>
@@ -378,27 +365,6 @@
 
     <div style="text-align: right; margin-top: 14px;">
       <button type="button" class="sub-btn" onclick="toggleModal(false)">닫기</button>
-    </div>
-  </div>
-</div>
-
-<!-- 엑셀 내보내기 / 직접 복사 모달 -->
-<div id="exportModal" class="modal-overlay">
-  <div class="modal">
-    <h2>📊 엑셀 내보내기 결과</h2>
-    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 8px;">
-      보안망 환경에서도 안전하게 복사할 수 있는 결과 창입니다.<br>
-      <strong>[텍스트 전체 선택]</strong>을 누른 후 <code>Ctrl + C</code> ➔ 엑셀 창에서 <code>Ctrl + V</code>를 누르면 바로 표로 들어갑니다.
-    </p>
-    
-    <textarea id="exportTextarea" class="export-textarea" readonly onclick="this.select()"></textarea>
-
-    <div style="display: flex; justify-content: space-between; margin-top: 14px; gap: 8px;">
-      <button type="button" class="excel-btn" onclick="triggerDirectFileDownload()">📥 파일(.csv) 다운로드</button>
-      <div style="display: flex; gap: 6px;">
-        <button type="button" onclick="selectExportText()">전체 선택</button>
-        <button type="button" class="sub-btn" onclick="toggleExportModal(false)">닫기</button>
-      </div>
     </div>
   </div>
 </div>
@@ -434,10 +400,6 @@
     if(show) updateSecGroupDropdown();
   }
 
-  function toggleExportModal(show) {
-    document.getElementById('exportModal').classList.toggle('active', show);
-  }
-
   function switchSecTab(tab) {
     document.querySelectorAll('.sec-tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.sec-content').forEach(el => el.classList.remove('active'));
@@ -466,7 +428,7 @@
   }
   function renderSecretSepList() {
     document.getElementById('secretSepList').innerHTML = separatedPairs.map(([a, b], i) => `
-      <div class="rule-item"><span><strong>${a}번</strong> ↔ <strong>${b}번</strong> 찢기</span>
+      <div class="rule-item"><span><strong>${a}번</strong> ↔ <strong>${b}번</strong> 분리</span>
       <button style="padding:2px 6px; font-size:0.75rem; background:#ef4444;" onclick="separatedPairs.splice(${i},1); renderSecretSepList();">삭제</button></div>`).join('');
   }
 
@@ -487,6 +449,12 @@
     });
     document.getElementById('secFixInput').value = '';
     renderSecretFixList();
+  }
+  function removeSecretFix(gIdx, val) {
+    if(secretGroupFixed[gIdx]) {
+      secretGroupFixed[gIdx] = secretGroupFixed[gIdx].filter(n => n !== val);
+      renderSecretFixList();
+    }
   }
   function renderSecretFixList() {
     let html = '';
@@ -900,74 +868,45 @@
     setTimeout(lockNext, 500);
   }
 
-  /* ================= 엑셀 내보내기 모달 & 안전 다운로드 ================= */
-  let currentExportCsv = "";
+  /* ================= SheetJS 기반 엑셀 다운로드 복구 ================= */
+  function exportToExcel() {
+    if (isRolling) return alert("추첨 종료 후 다운로드 가능합니다.");
+    if (typeof XLSX === 'undefined') return alert("엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결 상태를 확인해주세요.");
 
-  function openExportModal() {
-    if (isRolling) return alert("추첨 종료 후 이용 가능합니다.");
-
-    let tsv = "";
-    let csv = "";
+    const wb = XLSX.utils.book_new();
 
     if (activeTab === 'seat') {
       const mode = document.getElementById('seatType').value;
-      tsv += "[ 교탁 / 칠판 ]\n\n";
-      csv += "[ 교탁 / 칠판 ]\n\n";
-
-      seatGrid.forEach(row => {
-        let rowTsv = [];
-        let rowCsv = [];
-        row.forEach((val, c) => {
-          if (mode === 'pair' && (c === 2 || c === 4)) {
-            rowTsv.push(""); // 통로 열
-            rowCsv.push("");
-          }
-          const text = val ? `${val}번` : "";
-          rowTsv.push(text);
-          rowCsv.push(`"${text}"`);
-        });
-        tsv += rowTsv.join("\t") + "\n";
-        csv += rowCsv.join(",") + "\n";
-      });
-    } else {
-      if (groupAssigned.length === 0) return alert("모둠 추첨 완료 후 내보내기가 가능합니다.");
+      const wsData = [["[ 교탁 / 칠판 ]"]];
       
-      tsv += "모둠\t학생 명단\n";
-      csv += "모둠,학생 명단\n";
+      seatGrid.forEach(row => {
+        let rowData = [];
+        row.forEach((val, c) => {
+          // 짝꿍 모드일 때 엑셀에서도 분단 사이에 빈 열을 삽입하여 시각화
+          if (mode === 'pair' && (c === 2 || c === 4)) {
+            rowData.push(""); 
+          }
+          rowData.push(val ? `${val}번` : "");
+        });
+        wsData.push(rowData);
+      });
 
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, "자리배치");
+      XLSX.writeFile(wb, "학급_자리배치결과.xlsx");
+    } else {
+      if (groupAssigned.length === 0) return alert("모둠 추첨 완료 후 엑셀 다운로드가 가능합니다.");
+      
+      const wsData = [["모둠", "학생 명단"]];
       groupAssigned.forEach((g, i) => {
         const sorted = [...g].sort((a, b) => a - b);
-        const memberStr = sorted.map(n => `${n}번`).join(", ");
-        tsv += `${i + 1}모둠\t${memberStr}\n`;
-        csv += `"${i + 1}모둠","${memberStr}"\n`;
+        wsData.push([`${i + 1}모둠`, sorted.map(n => `${n}번`).join(', ')]);
       });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, "모둠배치");
+      XLSX.writeFile(wb, "학급_모둠구성결과.xlsx");
     }
-
-    currentExportCsv = csv;
-    const ta = document.getElementById('exportTextarea');
-    ta.value = tsv; // 엑셀 붙여넣기에는 탭(Tab) 구분이 가장 깔끔함
-    toggleExportModal(true);
-    setTimeout(() => { ta.select(); }, 150);
-  }
-
-  function selectExportText() {
-    const ta = document.getElementById('exportTextarea');
-    ta.select();
-    ta.setSelectionRange(0, 99999);
-    document.execCommand('copy');
-    alert("텍스트가 복사되었습니다!\n엑셀 창에서 바로 Ctrl + V 를 누르세요.");
-  }
-
-  function triggerDirectFileDownload() {
-    const fileName = activeTab === 'seat' ? '학급_자리배치결과.csv' : '학급_모둠구성결과.csv';
-    // Data-URI 인라인 방식 (Blob 차단 우회)
-    const encodedUri = "data:text/csv;charset=utf-8,\uFEFF" + encodeURIComponent(currentExportCsv);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   }
 
   resetAll();
