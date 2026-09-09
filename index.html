@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학급 자리 & 모둠 관리 시스템</title>
-  <!-- 안정성이 검증된 Cloudflare CDN 백업 주소로 교체 -->
+  <!-- Cloudflare CDN 미러 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -255,7 +255,7 @@
     <button class="excel-btn" onclick="exportToExcel()">📥 엑셀 파일 다운로드</button>
   </div>
 
-  <!-- 자리 바꾸기 -->
+  <!-- ================= 자리 바꾸기 ================= -->
   <div id="seatView">
     <div class="step-banner">
       <div class="step-indicator">
@@ -268,8 +268,8 @@
       <!-- 0단계: 결번 설정 -->
       <div id="seatStep0" class="step-action-bar">
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <input type="text" id="excludeInput" placeholder="전학/결번 (예: 4, 17)" style="width: 170px;" onkeypress="if(event.key==='Enter') addExcludeStudents()">
-          <button class="sub-btn" onclick="addExcludeStudents()">결번 등록</button>
+          <input type="text" id="excludeInput" placeholder="전학/결번 (예: 4, 17)" style="width: 170px;" onkeypress="if(event.key==='Enter') addExcludeStudents('seat')">
+          <button class="sub-btn" onclick="addExcludeStudents('seat')">결번 등록</button>
           <span style="font-size: 0.85rem; color: #475569;">실제 자리 배치 대상: <strong id="activeStudentCount" style="color: var(--primary);">28</strong>명</span>
         </div>
         <button onclick="moveSeatStep(1)">결번 확정 ➔ 1단계로</button>
@@ -316,15 +316,28 @@
     <div id="seatGrid" class="seat-grid"></div>
   </div>
 
-  <!-- 모둠 구성 -->
+  <!-- ================= 모둠 구성 ================= -->
   <div id="groupView" style="display: none;">
     <div class="step-banner">
       <div class="step-indicator">
-        <span id="grpBadge1" class="step-badge current" onclick="moveGroupStep(1)">1단계: 모둠 구조 설정</span>
+        <span id="grpBadge0" class="step-badge current" onclick="moveGroupStep(0)">0단계: 전학/결번 제외</span>
+        <span id="grpBadge1" class="step-badge" onclick="moveGroupStep(1)">1단계: 모둠 구조 설정</span>
         <span id="grpBadge2" class="step-badge" onclick="moveGroupStep(2)">2단계: 전체 추첨</span>
       </div>
 
-      <div id="grpStep1" class="step-action-bar">
+      <!-- 모둠 0단계: 결번 설정 -->
+      <div id="grpStep0" class="step-action-bar">
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="grpExcludeInput" placeholder="전학/결번 (예: 4, 17)" style="width: 170px;" onkeypress="if(event.key==='Enter') addExcludeStudents('group')">
+          <button class="sub-btn" onclick="addExcludeStudents('group')">결번 등록</button>
+          <span style="font-size: 0.85rem; color: #475569;">실제 모둠 편성 대상: <strong id="grpActiveStudentCount" style="color: var(--primary);">28</strong>명</span>
+        </div>
+        <button onclick="moveGroupStep(1)">결번 확정 ➔ 1단계로</button>
+        <div class="tags-container" id="grpExcludeStudentsTags"></div>
+      </div>
+
+      <!-- 모둠 1단계: 구조 설정 -->
+      <div id="grpStep1" class="step-action-bar" style="display: none;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <label style="font-weight: bold; font-size: 0.9rem;">총 모둠 수:</label>
           <select id="groupCountSelect" onchange="initGroupCapacities()">
@@ -335,10 +348,14 @@
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
           <span id="grpStatusLabel" style="font-size: 0.85rem; font-weight: bold; color: #dc2626;">남은 인원: 0명 배정 필요</span>
-          <button id="btnGrpNext1" onclick="moveGroupStep(2)">구조 확정 ➔ 2단계</button>
+          <div style="display: flex; gap: 6px;">
+            <button class="sub-btn" onclick="moveGroupStep(0)">⬅ 0단계</button>
+            <button id="btnGrpNext1" onclick="moveGroupStep(2)">구조 확정 ➔ 2단계</button>
+          </div>
         </div>
       </div>
 
+      <!-- 모둠 2단계: 전체 추첨 -->
       <div id="grpStep2" class="step-action-bar" style="display: none;">
         <span style="font-size: 0.85rem; color: #475569;">🎉 설정된 모둠 구조에 맞춰 추첨을 진행합니다.</span>
         <div style="display: flex; gap: 6px;">
@@ -396,9 +413,11 @@
   let separatedPairs = [];
   let secretGroupFixed = {};
 
+  // 공통 전학/결번 목록
+  let excludedStudents = []; 
+
   // 자리 상태
   let seatStep = 0;
-  let excludedStudents = []; // 전학/결번 목록
   let seatGridRows = 0, seatGridCols = 0;
   let seatGrid = [];
   let seatFixed = {};
@@ -407,7 +426,7 @@
   let frontAssigned = {};
 
   // 모둠 상태
-  let grpStep = 1;
+  let grpStep = 0;
   let groupCapacities = []; 
   let groupAssigned = [];
 
@@ -474,6 +493,12 @@
     document.getElementById('secFixInput').value = '';
     renderSecretFixList();
   }
+  function removeSecretFix(gIdx, val) {
+    if(secretGroupFixed[gIdx]) {
+      secretGroupFixed[gIdx] = secretGroupFixed[gIdx].filter(n => n !== val);
+      renderSecretFixList();
+    }
+  }
   function renderSecretFixList() {
     let html = '';
     for(let gIdx in secretGroupFixed) {
@@ -504,9 +529,12 @@
     document.getElementById('seatView').style.display = tab === 'seat' ? 'block' : 'none';
     document.getElementById('groupView').style.display = tab === 'group' ? 'block' : 'none';
     document.getElementById('seatOptionBlock').style.display = tab === 'seat' ? 'block' : 'none';
+    
+    // 탭 전환 시 결번 태그 동기화
+    renderExcludeTags();
   }
 
-  /* ================= 자리 탭 로직 ================= */
+  /* ================= 공통 학생 계산 ================= */
   function getActualStudentCount() {
     const total = parseInt(document.getElementById('totalStudents').value);
     return Math.max(0, total - excludedStudents.length);
@@ -521,6 +549,57 @@
     return list;
   }
 
+  // --- 전학/결번 공통 추가/삭제 ---
+  function addExcludeStudents(fromTab) {
+    const inputId = fromTab === 'seat' ? 'excludeInput' : 'grpExcludeInput';
+    const total = parseInt(document.getElementById('totalStudents').value);
+    const nums = document.getElementById(inputId).value.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+    nums.forEach(val => {
+      if (val > 0 && val <= total && !excludedStudents.includes(val)) {
+        excludedStudents.push(val);
+      }
+    });
+    document.getElementById(inputId).value = '';
+    
+    syncAfterExcludeChange();
+  }
+
+  function removeExcludeStudent(val) {
+    excludedStudents = excludedStudents.filter(n => n !== val);
+    syncAfterExcludeChange();
+  }
+
+  function syncAfterExcludeChange() {
+    const actualCount = getActualStudentCount();
+    const mode = document.getElementById('seatType').value;
+    seatGridCols = mode === 'single' ? 5 : 6;
+    seatGridRows = Math.ceil(actualCount / seatGridCols);
+    
+    // 자리 고정석 중 결번에 포함된 학생 제거
+    for (let k in seatFixed) {
+      if (excludedStudents.includes(seatFixed[k])) delete seatFixed[k];
+    }
+    syncSeatGrid();
+    renderSeatGrid();
+    renderExcludeTags();
+    initGroupCapacities(); // 모둠 크기 자동 재계산
+  }
+
+  function renderExcludeTags() {
+    const count = getActualStudentCount();
+    document.getElementById('activeStudentCount').textContent = count;
+    document.getElementById('grpActiveStudentCount').textContent = count;
+
+    const html = excludedStudents.map(val => `
+      <div class="student-tag exclude-tag" onclick="removeExcludeStudent(${val})">
+        ${val}번 결번 <span>×</span>
+      </div>`).join('');
+      
+    document.getElementById('excludeStudentsTags').innerHTML = html;
+    document.getElementById('grpExcludeStudentsTags').innerHTML = html;
+  }
+
+  /* ================= 자리 탭 로직 ================= */
   function resetSeatLayout() {
     const actualCount = getActualStudentCount();
     const mode = document.getElementById('seatType').value;
@@ -555,53 +634,6 @@
     for (let k in frontAssigned) { const [r, c] = k.split(','); seatGrid[r][c] = frontAssigned[k]; }
   }
 
-  // --- 0단계 결번(제외 번호) 관리 ---
-  function addExcludeStudents() {
-    const total = parseInt(document.getElementById('totalStudents').value);
-    const nums = document.getElementById('excludeInput').value.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
-    nums.forEach(val => {
-      if (val > 0 && val <= total && !excludedStudents.includes(val)) {
-        excludedStudents.push(val);
-      }
-    });
-    document.getElementById('excludeInput').value = '';
-    
-    // 결번 변동 시 책상 수 재계산
-    const actualCount = getActualStudentCount();
-    const mode = document.getElementById('seatType').value;
-    seatGridCols = mode === 'single' ? 5 : 6;
-    seatGridRows = Math.ceil(actualCount / seatGridCols);
-    
-    // 기존 고정석 중 결번에 포함된 학생 제거
-    for (let k in seatFixed) {
-      if (excludedStudents.includes(seatFixed[k])) delete seatFixed[k];
-    }
-    syncSeatGrid();
-    renderSeatGrid();
-    renderExcludeTags();
-    initGroupCapacities(); // 모둠 인원도 재동기화
-  }
-
-  function removeExcludeStudent(val) {
-    excludedStudents = excludedStudents.filter(n => n !== val);
-    const actualCount = getActualStudentCount();
-    const mode = document.getElementById('seatType').value;
-    seatGridCols = mode === 'single' ? 5 : 6;
-    seatGridRows = Math.ceil(actualCount / seatGridCols);
-    syncSeatGrid();
-    renderSeatGrid();
-    renderExcludeTags();
-    initGroupCapacities();
-  }
-
-  function renderExcludeTags() {
-    document.getElementById('activeStudentCount').textContent = getActualStudentCount();
-    document.getElementById('excludeStudentsTags').innerHTML = excludedStudents.map(val => `
-      <div class="student-tag exclude-tag" onclick="removeExcludeStudent(${val})">
-        ${val}번 결번 <span>×</span>
-      </div>`).join('');
-  }
-
   function handleSeatClick(r, c) {
     if (isRolling) return;
     const key = `${r},${c}`;
@@ -613,7 +645,7 @@
       const num = parseInt(prompt("학생 번호:"));
       const total = parseInt(document.getElementById('totalStudents').value);
       if (!num || num < 1 || num > total) return;
-      if (excludedStudents.includes(num)) return alert(`${num}번은 0단계에서 전학/결번 처리된 학생입니다.`);
+      if (excludedStudents.includes(num)) return alert(`${num}번은 결번으로 제외된 번호입니다.`);
       if (Object.values(seatFixed).includes(num)) return alert("이미 배정된 학생입니다.");
       seatFixed[key] = num; syncSeatGrid(); renderSeatGrid();
     } else if (seatStep === 2) {
@@ -809,21 +841,23 @@
     
     groupAssigned = [];
     updateSecGroupDropdown();
-    moveGroupStep(1);
+    moveGroupStep(0);
   }
 
   function moveGroupStep(step) {
     if (isRolling) return;
     grpStep = step;
-    ['grpBadge1', 'grpBadge2'].forEach((id, i) => {
-      document.getElementById(id).className = `step-badge ${i + 1 === step ? 'current' : ''}`;
+    ['grpBadge0', 'grpBadge1', 'grpBadge2'].forEach((id, i) => {
+      document.getElementById(id).className = `step-badge ${i === step ? 'current' : ''}`;
     });
+    document.getElementById('grpStep0').style.display = step === 0 ? 'flex' : 'none';
     document.getElementById('grpStep1').style.display = step === 1 ? 'flex' : 'none';
     document.getElementById('grpStep2').style.display = step === 2 ? 'flex' : 'none';
     document.getElementById('groupCountSelect').disabled = (step !== 1);
     
-    if (step === 1) { groupAssigned = []; document.getElementById('btnRunGroupFinal').disabled = false; }
+    if (step < 2) { groupAssigned = []; document.getElementById('btnRunGroupFinal').disabled = false; }
     renderGroups();
+    renderExcludeTags();
   }
 
   function changeGroupSize(gIdx, delta) {
@@ -961,7 +995,6 @@
 
     const mode = document.getElementById('seatType').value;
 
-    // 1. 데이터 가공
     let sheetData = [];
     if (activeTab === 'seat') {
       sheetData.push(["[ 교탁 / 칠판 ]"]);
@@ -984,7 +1017,6 @@
 
     const fileName = activeTab === 'seat' ? "학급_자리배치결과" : "학급_모둠구성결과";
 
-    // 2. SheetJS 라이브러리 가동 시도 (.xlsx 생성)
     if (typeof XLSX !== 'undefined') {
       try {
         const wb = XLSX.utils.book_new();
@@ -993,12 +1025,12 @@
         XLSX.writeFile(wb, `${fileName}.xlsx`);
         return;
       } catch (err) {
-        console.warn("SheetJS 실행 차단 감지, 비상 내보내기로 전환합니다.", err);
+        console.warn("SheetJS 오류 감지, CSV 백업으로 전환합니다.", err);
       }
     }
 
-    // 3. 만약 네트워크/보안 차단으로 라이브러리 실행 불가 시 브라우저 자체 CSV 백업 다운로드
-    let csvContent = "\uFEFF"; // 한글 깨짐 방지 BOM
+    // CSV 백업 다운로드
+    let csvContent = "\uFEFF";
     sheetData.forEach(row => {
       csvContent += row.map(v => `"${v}"`).join(",") + "\r\n";
     });
