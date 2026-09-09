@@ -71,7 +71,6 @@
       border-bottom: 3px solid var(--primary);
     }
     
-    /* 컨트롤 패널 */
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -110,7 +109,6 @@
     button.sub-btn { background-color: #64748b; }
     button.sub-btn:hover { background-color: #475569; }
 
-    /* 단계 배너 */
     .step-banner {
       background: #eff6ff;
       border: 1px solid #bfdbfe;
@@ -156,12 +154,17 @@
       border-radius: 6px; font-weight: bold; margin: 12px auto; max-width: 320px;
       letter-spacing: 4px; font-size: 0.9rem;
     }
-    .seat-grid { display: grid; gap: 8px; justify-content: center; margin-top: 10px; }
+    .seat-grid { 
+      display: grid; 
+      gap: 10px; 
+      justify-content: center; 
+      margin-top: 10px; 
+    }
     .seat {
       width: 80px; height: 65px; background: #eff6ff; border: 2px solid #bfdbfe;
       border-radius: 8px; display: flex; flex-direction: column; align-items: center;
       justify-content: center; font-weight: bold; font-size: 1.1rem; color: #1e40af;
-      cursor: pointer; user-select: none;
+      cursor: pointer; user-select: none; box-sizing: border-box;
     }
     .seat.empty { background: #ffffff; border: 2px dashed #cbd5e1; color: #94a3b8; }
     .seat.empty:hover { border-color: var(--primary); background: #f8fafc; }
@@ -172,6 +175,11 @@
     .seat.rolling { background: #fef08a !important; border-color: #f59e0b !important; color: #b45309 !important; transform: scale(1.05); }
     .seat.locked { animation: popIn 0.3s ease-out; }
     .seat-label { font-size: 0.65rem; color: #64748b; margin-bottom: 2px; }
+
+    /* 짝꿍 모드 분단 통로 여백 */
+    .seat.aisle-right {
+      margin-right: 20px;
+    }
 
     @keyframes popIn { 0% { transform: scale(0.6); opacity: 0.5; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
 
@@ -198,7 +206,6 @@
     .modal { background: white; padding: 20px; border-radius: 12px; width: 440px; max-width: 95%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); }
     .modal h2 { margin-top: 0; font-size: 1.15rem; color: #dc2626; margin-bottom: 12px; }
     
-    /* 비밀 모달 내부 탭 */
     .sec-tabs { display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
     .sec-tab-btn { background: none; border: none; padding: 6px 12px; font-size: 0.9rem; color: #64748b; font-weight: bold; border-bottom: 3px solid transparent; cursor: pointer; }
     .sec-tab-btn.active { color: #dc2626; border-bottom-color: #dc2626; }
@@ -236,7 +243,6 @@
       </select>
     </label>
     
-    <!-- 자리 컨트롤 -->
     <div id="seatOptionBlock">
       <label>배열 형태:
         <select id="seatType" onchange="resetSeatLayout()">
@@ -246,12 +252,11 @@
       </label>
     </div>
 
-    <!-- 공통 버튼 -->
     <button class="sub-btn" onclick="resetAll()">처음부터 다시</button>
     <button class="excel-btn" onclick="exportToExcel()">엑셀 다운로드</button>
   </div>
 
-  <!-- ================= 자리 바꾸기 ================= -->
+  <!-- 자리 바꾸기 -->
   <div id="seatView">
     <div class="step-banner">
       <div class="step-indicator">
@@ -294,8 +299,7 @@
     <div id="seatGrid" class="seat-grid"></div>
   </div>
 
-
-  <!-- ================= 모둠 구성 ================= -->
+  <!-- 모둠 구성 -->
   <div id="groupView" style="display: none;">
     <div class="step-banner">
       <div class="step-indicator">
@@ -330,7 +334,7 @@
   </div>
 </div>
 
-<!-- ================= 비밀 모달 (F2) ================= -->
+<!-- 비밀 모달 (F2) -->
 <div id="secretModal" class="modal-overlay">
   <div class="modal">
     <h2>🔒 교사 전용 비밀 설정</h2>
@@ -340,7 +344,6 @@
       <button class="sec-tab-btn" onclick="switchSecTab('fix')">모둠: 비밀 고정</button>
     </div>
 
-    <!-- 1. 분리 탭 -->
     <div id="secTabSep" class="sec-content active">
       <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">
         서로 떨어뜨려 놓을 학생 번호 입력 (예: <strong>3 8 12</strong> 입력 시 3명 모두 흩어짐)
@@ -352,7 +355,6 @@
       <div class="rules-list" id="secretSepList"></div>
     </div>
 
-    <!-- 2. 모둠 고정 탭 -->
     <div id="secTabFix" class="sec-content">
       <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">
         특정 모둠에 필수로 넣을 학생 번호 (학생 화면에선 빈칸으로 보이다가 추첨 시 당첨됨)
@@ -374,25 +376,21 @@
 <script>
   let isRolling = false;
 
-  // 공통 데이터
-  let separatedPairs = []; // [[a,b], [c,d]]
-  let secretGroupFixed = {}; // { groupIdx: [stu1, stu2] }
+  let separatedPairs = [];
+  let secretGroupFixed = {};
 
-  // 자리 상태
   let seatStep = 1;
   let seatGridRows = 0, seatGridCols = 0;
-  let seatGrid = []; // 2D array
-  let seatFixed = {}; // "r,c" -> num
+  let seatGrid = [];
+  let seatFixed = {};
   let frontCandidates = new Set(); 
   let frontStudents = [];
-  let frontAssigned = {}; // "r,c" -> num
+  let frontAssigned = {};
 
-  // 모둠 상태
   let grpStep = 1;
   let groupCapacities = []; 
-  let groupAssigned = []; // 추첨 완료 결과
+  let groupAssigned = [];
 
-  /* === 이벤트 리스너 === */
   window.addEventListener('keydown', (e) => { if (e.key === 'F2') { e.preventDefault(); toggleModal(true); } });
   let clickCount = 0, clickTimer = null;
   document.getElementById('secretTrigger').addEventListener('click', () => {
@@ -418,7 +416,6 @@
     }
   }
 
-  /* === 비밀 모달 기능 === */
   function addSecretSepRule() {
     const nums = document.getElementById('secretSepInput').value.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0);
     if (nums.length < 2) return alert("2명 이상의 번호를 입력해주세요.");
@@ -450,7 +447,6 @@
     
     if (!secretGroupFixed[gIdx]) secretGroupFixed[gIdx] = [];
     nums.forEach(n => {
-      // 중복 체크
       let exists = false;
       for(let k in secretGroupFixed) if(secretGroupFixed[k].includes(n)) exists = true;
       if(!exists && secretGroupFixed[gIdx].length < groupCapacities[gIdx]) secretGroupFixed[gIdx].push(n);
@@ -483,7 +479,6 @@
     return arr;
   }
 
-  /* === 공통 UI === */
   function resetAll() {
     if (isRolling) return;
     resetSeatLayout();
@@ -556,19 +551,16 @@
     const mode = document.getElementById('seatType').value;
     const gridEl = document.getElementById('seatGrid');
     gridEl.innerHTML = '';
-    gridEl.style.gridTemplateColumns = mode === 'pair' ? 'repeat(2, 80px) 20px repeat(2, 80px) 20px repeat(2, 80px)' : `repeat(${seatGridCols}, 80px)`;
+    
+    gridEl.style.gridTemplateColumns = `repeat(${seatGridCols}, 80px)`;
 
     const totalCount = parseInt(document.getElementById('totalStudents').value);
     let idx = 0;
     for (let r = 0; r < seatGridRows; r++) {
       for (let c = 0; c < seatGridCols; c++) {
-        if (mode === 'pair' && (c === 2 || c === 4)) {
-          const corridor = document.createElement('div'); corridor.style.width = '20px'; gridEl.appendChild(corridor);
-        }
         idx++;
         const cell = document.createElement('div');
         
-        // ★ 빈자리 오류 핵심 수정: totalCount 밖의 칸은 완전히 차단
         if (idx > totalCount) { 
           cell.className = 'seat'; 
           cell.style.visibility = 'hidden'; 
@@ -577,16 +569,23 @@
           continue; 
         }
 
+        if (mode === 'pair' && (c === 1 || c === 3)) {
+          cell.classList.add('aisle-right');
+        }
+
+        cell.setAttribute('data-r', r);
+        cell.setAttribute('data-c', c);
+
         const key = `${r},${c}`;
         const stu = seatGrid[r][c];
 
         if (stu) {
           const isFixed = seatFixed[key];
-          cell.className = `seat ${isFixed ? 'fixed' : 'front-assigned'}`;
+          cell.className += ` seat ${isFixed ? 'fixed' : 'front-assigned'}`;
           cell.innerHTML = `<span class="seat-label">${isFixed ? '지정석' : '우선석'}</span>${stu}번`;
         } else {
           const isCand = seatStep === 2 && frontCandidates.has(key);
-          cell.className = `seat empty ${isCand ? 'front-candidate' : ''}`;
+          cell.className += ` seat empty ${isCand ? 'front-candidate' : ''}`;
           cell.innerHTML = `<span class="seat-label">${seatStep === 1 ? '클릭지정' : (isCand ? '후보좌석' : (seatStep===3?'빈자리':'클릭선택'))}</span>${isCand ? '★' : '-'}`;
         }
         cell.onclick = () => handleSeatClick(r, c);
@@ -615,9 +614,11 @@
     const shufs = shuffle([...frontStudents]);
     const map = {}; cands.forEach((c, i) => map[c] = shufs[i]);
 
-    startSlotAnimation(cands.map(c => c.split(',').map(Number)), map, 'seat', () => {
+    startSlotAnimation(cands.map(c => c.split(',').map(Number)), map, () => {
       cands.forEach(c => { const [r, cc] = c.split(','); seatGrid[r][cc] = map[c]; frontAssigned[c] = map[c]; });
-      document.getElementById('btnRunFront').disabled = true; setTimeout(() => moveSeatStep(3), 800);
+      document.getElementById('btnRunFront').disabled = true; 
+      renderSeatGrid();
+      setTimeout(() => moveSeatStep(3), 800);
     });
   }
 
@@ -625,7 +626,6 @@
     if (isRolling) return;
     const totalCount = parseInt(document.getElementById('totalStudents').value);
     
-    // 할당된 학생 파악 및 빈자리 추출 (유효한 자리만)
     let assigned = new Set();
     let emptys = [];
     let idx = 0;
@@ -633,7 +633,7 @@
     for (let r=0; r<seatGridRows; r++) {
       for(let c=0; c<seatGridCols; c++) {
         idx++;
-        if (idx <= totalCount) { // 유효한 자리 안에서만
+        if (idx <= totalCount) { 
           if (seatGrid[r][c]) assigned.add(seatGrid[r][c]);
           else emptys.push([r,c]);
         }
@@ -642,11 +642,6 @@
     
     let rem = []; 
     for (let i=1; i<=totalCount; i++) if (!assigned.has(i)) rem.push(i);
-    
-    // 남은 학생 수와 남은 자리 수가 정확히 일치해야 함
-    if(rem.length !== emptys.length) {
-      console.error("Mismatch!", rem.length, emptys.length);
-    }
 
     let bestBoard = null; let minScore = Infinity;
     for (let i = 0; i < 3000; i++) {
@@ -654,10 +649,7 @@
       let shuf = shuffle([...rem]);
       let pos = {};
       
-      // 이미 배치된 학생 위치 기록
       for (let r=0; r<seatGridRows; r++) for(let c=0; c<seatGridCols; c++) if(temp[r][c]) pos[temp[r][c]] = {r,c};
-      
-      // 남은 학생 배치
       emptys.forEach(([r,c], i) => { temp[r][c] = shuf[i]; pos[shuf[i]] = {r,c}; });
       
       let score = 0;
@@ -673,9 +665,48 @@
     }
     
     const map = {}; emptys.forEach(([r,c]) => map[`${r},${c}`] = bestBoard[r][c]);
-    startSlotAnimation(emptys, map, 'seat', () => {
-      seatGrid = bestBoard; document.getElementById('btnRunFinal').disabled = true;
+    startSlotAnimation(emptys, map, () => {
+      seatGrid = bestBoard; 
+      document.getElementById('btnRunFinal').disabled = true;
+      renderSeatGrid();
     });
+  }
+
+  function startSlotAnimation(coords, map, onComplete) {
+    isRolling = true;
+    const count = parseInt(document.getElementById('totalStudents').value);
+    let targets = [];
+    
+    coords.forEach(([r, c]) => {
+      const el = document.querySelector(`.seat[data-r="${r}"][data-c="${c}"]`);
+      if (el) { 
+        el.className = 'seat rolling'; 
+        targets.push({ el, stu: map[`${r},${c}`] }); 
+      }
+    });
+    
+    const timer = setInterval(() => {
+      targets.forEach(t => { 
+        if (t.el.classList.contains('rolling')) {
+          t.el.innerHTML = `<span class="seat-label">추첨중</span>${Math.floor(Math.random()*count)+1}`; 
+        }
+      });
+    }, 60);
+
+    let locked = 0; targets = shuffle(targets);
+    const lockNext = () => {
+      if (locked >= targets.length) { 
+        clearInterval(timer); 
+        isRolling = false; 
+        if (onComplete) onComplete(); 
+        return; 
+      }
+      const t = targets[locked++];
+      t.el.className = 'seat locked'; 
+      t.el.innerHTML = `<span class="seat-label">학생</span>${t.stu}번`;
+      setTimeout(lockNext, 60 + Math.pow(locked/targets.length, 2)*150);
+    };
+    setTimeout(lockNext, 400);
   }
 
   /* ================= 모둠 탭 로직 ================= */
@@ -689,7 +720,6 @@
     for (let i = 0; i < rem; i++) groupCapacities[i]++; 
     
     groupAssigned = [];
-    // 비밀 모달 내 모둠 선택 업데이트
     updateSecGroupDropdown();
     moveGroupStep(1);
   }
@@ -759,8 +789,7 @@
     if (isRolling) return;
     const total = parseInt(document.getElementById('totalStudents').value);
     
-    // 1. 비밀 고정석 할당 확인 및 검증
-    let fixedMap = {}; // gIdx -> array of students
+    let fixedMap = {};
     let assignedSet = new Set();
     
     for (let gIdx = 0; gIdx < groupCapacities.length; gIdx++) {
@@ -775,11 +804,9 @@
       }
     }
 
-    // 2. 남은 인원 정리
     let rem = [];
     for (let i = 1; i <= total; i++) if (!assignedSet.has(i)) rem.push(i);
 
-    // 3. 최적 셔플 (비밀 분리 조건)
     let bestBoard = null; let minScore = Infinity;
     for (let iter = 0; iter < 3000; iter++) {
       let tempGroups = groupCapacities.map((cap, i) => [...fixedMap[i]]);
@@ -800,7 +827,6 @@
       if (minScore === 0) break;
     }
 
-    // 애니메이션을 위해 빈 슬롯 배열 구성 (고정된 학생도 무작위 순서로 보이게 하기 위해 그룹 내부 셔플)
     bestBoard = bestBoard.map(g => shuffle([...g]));
 
     isRolling = true;
@@ -827,7 +853,7 @@
         clearInterval(rollTimer); isRolling = false;
         groupAssigned = bestBoard;
         document.getElementById('btnRunGroupFinal').disabled = true;
-        renderGroups(); // 애니메이션 끝나고 깔끔하게 재렌더
+        renderGroups();
         return;
       }
       const [gi, sj] = targets[locked++];
@@ -839,35 +865,6 @@
     setTimeout(lockNext, 500);
   }
 
-  // 통합 애니메이션 도우미 (자리)
-  function startSlotAnimation(coords, map, type, onComplete) {
-    isRolling = true;
-    const cells = document.getElementById('seatGrid').querySelectorAll('.seat');
-    const mode = document.getElementById('seatType').value;
-    const count = parseInt(document.getElementById('totalStudents').value);
-    let targets = [];
-    coords.forEach(([r, c]) => {
-      let domIdx = r * seatGridCols + c;
-      if (mode === 'pair') domIdx = r * (seatGridCols + 2) + c + ((c>=2?1:0)+(c>=4?1:0));
-      const el = cells[domIdx];
-      if (el) { el.className = 'seat rolling'; targets.push({ el, stu: map[`${r},${c}`] }); }
-    });
-    
-    const timer = setInterval(() => {
-      targets.forEach(t => { if (t.el.classList.contains('rolling')) t.el.innerHTML = `<span class="seat-label">추첨중</span>${Math.floor(Math.random()*count)+1}`; });
-    }, 60);
-
-    let locked = 0; targets = shuffle(targets);
-    const lockNext = () => {
-      if (locked >= targets.length) { clearInterval(timer); isRolling = false; if (onComplete) onComplete(); return; }
-      const t = targets[locked++];
-      t.el.className = 'seat locked'; t.el.innerHTML = `<span class="seat-label">학생</span>${t.stu}번`;
-      setTimeout(lockNext, 60 + Math.pow(locked/targets.length, 2)*150);
-    };
-    setTimeout(lockNext, 400);
-  }
-
-  /* === 엑셀 다운로드 === */
   function exportToExcel() {
     if (isRolling) return alert("추첨 종료 후 다운로드 가능합니다.");
     const wb = XLSX.utils.book_new();
