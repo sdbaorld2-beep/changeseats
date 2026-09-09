@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>학급 자리 & 모둠 배치 프로그램</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학급 자리 및 모둠 배치</title>
   <!-- SheetJS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -10,16 +11,16 @@
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
       --bg: #f8fafc;
-      --card-bg: #ffffff;
+      --card: #ffffff;
       --text: #1e293b;
-      --border: #e2e8f0;
+      --border: #cbd5e1;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
       background-color: var(--bg);
       color: var(--text);
       margin: 0;
-      padding: 24px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -27,26 +28,62 @@
     .container {
       max-width: 900px;
       width: 100%;
-      background: var(--card-bg);
-      border-radius: 12px;
+      background: var(--card);
+      border-radius: 14px;
       padding: 24px;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .header {
+      text-align: center;
+      position: relative;
+      margin-bottom: 20px;
     }
     h1 {
-      margin-top: 0;
-      text-align: center;
-      font-size: 1.5rem;
+      margin: 0;
+      font-size: 1.6rem;
+      display: inline-block;
+    }
+    /* 비밀 클릭 포인트: 제목 끝의 점 */
+    .secret-trigger {
+      cursor: default;
+      user-select: none;
+      color: var(--text);
+    }
+    /* 탭 메뉴 */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #64748b;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom: 3px solid var(--primary);
     }
     .controls {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       justify-content: center;
-      margin-bottom: 20px;
       align-items: center;
+      margin-bottom: 20px;
+      background: #f1f5f9;
+      padding: 14px;
+      border-radius: 8px;
     }
-    select, input, button {
-      padding: 8px 12px;
+    select, button {
+      padding: 8px 14px;
       font-size: 0.95rem;
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -56,37 +93,33 @@
       background-color: var(--primary);
       color: white;
       cursor: pointer;
-      border: none;
       font-weight: 600;
-      transition: background-color 0.2s;
+      border: none;
+      transition: background 0.2s;
     }
-    button:hover {
-      background-color: var(--primary-hover);
-    }
-    button.secondary {
-      background-color: #10b981;
-    }
-    button.secondary:hover {
-      background-color: #059669;
-    }
+    button:hover { background-color: var(--primary-hover); }
+    button.excel-btn { background-color: #059669; }
+    button.excel-btn:hover { background-color: #047857; }
+
+    /* 자리 배치 영역 */
     .board-indicator {
       text-align: center;
-      padding: 10px;
+      padding: 8px;
       background: #e2e8f0;
       border-radius: 6px;
       font-weight: bold;
-      margin: 20px 0;
-      letter-spacing: 2px;
+      margin: 16px 0;
+      letter-spacing: 3px;
     }
-    .grid {
+    .seat-grid {
       display: grid;
       gap: 10px;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 10px;
     }
     .seat {
       width: 80px;
-      height: 70px;
+      height: 65px;
       background: #eff6ff;
       border: 2px solid #bfdbfe;
       border-radius: 8px;
@@ -95,7 +128,7 @@
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       color: #1e40af;
     }
     .seat.empty {
@@ -104,11 +137,48 @@
       color: #94a3b8;
     }
     .seat-label {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: #64748b;
-      margin-bottom: 2px;
     }
-    /* 시크릿 모달 */
+
+    /* 모둠 구성 영역 */
+    .groups-wrapper {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .group-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .group-title {
+      font-weight: bold;
+      color: var(--primary);
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 1.05rem;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+    .group-members {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+    .member-badge {
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    /* 비밀 모달 */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -118,24 +188,18 @@
       align-items: center;
       z-index: 1000;
     }
-    .modal-overlay.active {
-      display: flex;
-    }
+    .modal-overlay.active { display: flex; }
     .modal {
       background: white;
       padding: 24px;
       border-radius: 12px;
-      width: 400px;
-      max-width: 90%;
+      width: 380px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
-    .modal h2 {
-      margin-top: 0;
-      font-size: 1.25rem;
-      color: #dc2626;
-    }
+    .modal h2 { margin-top: 0; font-size: 1.2rem; color: #dc2626; }
     .rules-list {
       margin: 12px 0;
-      max-height: 150px;
+      max-height: 160px;
       overflow-y: auto;
       border: 1px solid var(--border);
       padding: 8px;
@@ -144,18 +208,28 @@
     .rule-item {
       display: flex;
       justify-content: space-between;
-      padding: 4px 0;
+      align-items: center;
+      padding: 6px 4px;
       border-bottom: 1px solid #f1f5f9;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>자리 및 모둠 배치 프로그램</h1>
+  <div class="header">
+    <h1>학급 자리 & 모둠 관리<span class="secret-trigger" id="secretTrigger" title="">.</span></h1>
+  </div>
 
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('seat')">자리 바꾸기</button>
+    <button class="tab-btn" onclick="switchTab('group')">모둠 구성</button>
+  </div>
+
+  <!-- 공통/자리 컨트롤 -->
   <div class="controls">
-    <label>인원 수:
+    <label>학생 수:
       <select id="totalStudents">
         <option value="24">24명</option>
         <option value="25">25명</option>
@@ -167,33 +241,53 @@
       </select>
     </label>
 
-    <label>형태:
-      <select id="seatMode">
-        <option value="pair">짝꿍 (2인 1조)</option>
-        <option value="single">독립 (1인 1조)</option>
-        <option value="group">모둠 편성 (4인 기준)</option>
-      </select>
-    </label>
+    <div id="seatOptionBlock">
+      <label>배열 방식:
+        <select id="seatType">
+          <option value="pair">2명씩 앉기 (짝꿍)</option>
+          <option value="single">1명씩 앉기 (독립)</option>
+        </select>
+      </label>
+    </div>
 
-    <button onclick="generateSeats()">자리 배치 실행</button>
-    <button class="secondary" onclick="exportToExcel()">엑셀 다운로드</button>
+    <div id="groupOptionBlock" style="display: none;">
+      <label>모둠당 인원:
+        <select id="groupSize">
+          <option value="3">3명씩</option>
+          <option value="4" selected>4명씩</option>
+          <option value="5">5명씩</option>
+          <option value="6">6명씩</option>
+        </select>
+      </label>
+    </div>
+
+    <button onclick="runPlacement()">추첨 실행</button>
+    <button class="excel-btn" onclick="exportToExcel()">엑셀 다운로드</button>
   </div>
 
-  <div class="board-indicator">[ 칠 판 ]</div>
-  <div id="seatGrid" class="grid"></div>
+  <!-- 자리 바꾸기 뷰 -->
+  <div id="seatView">
+    <div class="board-indicator">[ 칠 판 ]</div>
+    <div id="seatGrid" class="seat-grid"></div>
+  </div>
+
+  <!-- 모둠 구성 뷰 -->
+  <div id="groupView" style="display: none;">
+    <div id="groupsContainer" class="groups-wrapper"></div>
+  </div>
 </div>
 
-<!-- 시크릿 모달 -->
+<!-- 시크릿 설정 모달 -->
 <div id="secretModal" class="modal-overlay">
   <div class="modal">
-    <h2>🔒 교사 전용 격리 설정</h2>
-    <p style="font-size: 0.85rem; color: #64748b;">
-      좌우/상하로 바로 붙으면 안 되는 학생 번호 쌍을 등록하세요.
+    <h2>🔒 교사 전용 분리 설정</h2>
+    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4;">
+      자리에서는 상하좌우 인접 금지, 모둠에서는 같은 모둠 배정을 차단할 번호 쌍입니다.
     </p>
     <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-      <input type="number" id="stuA" placeholder="번호 1" style="width: 80px;">
-      <input type="number" id="stuB" placeholder="번호 2" style="width: 80px;">
-      <button type="button" onclick="addRule()">추가</button>
+      <input type="number" id="stuA" placeholder="번호1" style="width: 80px; padding: 6px;">
+      <input type="number" id="stuB" placeholder="번호2" style="width: 80px; padding: 6px;">
+      <button type="button" onclick="addRule()">등록</button>
     </div>
     <div class="rules-list" id="rulesList"></div>
     <div style="text-align: right; margin-top: 12px;">
@@ -203,20 +297,35 @@
 </div>
 
 <script>
-  let currentGrid = [];
+  let activeTab = 'seat';
   let separatedPairs = [];
+  let currentSeats = null;
+  let currentGroups = null;
 
-  // 시크릿 키: Ctrl + Shift + S
+  // 1. 비밀문 열기: F2 단축키
   window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+    if (e.key === 'F2') {
       e.preventDefault();
       toggleModal(true);
     }
   });
 
+  // 2. 비밀문 열기: 제목 끝의 점(.) 3번 빠르게 클릭
+  let clickCount = 0;
+  let clickTimer = null;
+  document.getElementById('secretTrigger').addEventListener('click', () => {
+    clickCount++;
+    clearTimeout(clickTimer);
+    if (clickCount >= 3) {
+      toggleModal(true);
+      clickCount = 0;
+    } else {
+      clickTimer = setTimeout(() => { clickCount = 0; }, 500);
+    }
+  });
+
   function toggleModal(show) {
-    const modal = document.getElementById('secretModal');
-    modal.classList.toggle('active', show);
+    document.getElementById('secretModal').classList.toggle('active', show);
   }
 
   function addRule() {
@@ -224,7 +333,6 @@
     const b = parseInt(document.getElementById('stuB').value);
     if (!a || !b || a === b) return;
 
-    // 중복 검사
     const exists = separatedPairs.some(([p1, p2]) => (p1 === a && p2 === b) || (p1 === b && p2 === a));
     if (!exists) {
       separatedPairs.push([Math.min(a, b), Math.max(a, b)]);
@@ -245,45 +353,90 @@
     separatedPairs.forEach(([a, b], idx) => {
       const div = document.createElement('div');
       div.className = 'rule-item';
-      div.innerHTML = `<span>${a}번 ⟷ ${b}번 분리</span>
-                       <button style="padding: 2px 6px; font-size: 0.75rem; background: #ef4444;" onclick="removeRule(${idx})">삭제</button>`;
+      div.innerHTML = `<span><strong>${a}번</strong> ⟷ <strong>${b}번</strong> 분리</span>
+                       <button style="padding: 2px 8px; font-size: 0.75rem; background: #ef4444;" onclick="removeRule(${idx})">삭제</button>`;
       list.appendChild(div);
     });
   }
 
-  function getLayoutDimensions(count, mode) {
-    if (mode === 'single') {
-      const cols = 6;
-      const rows = Math.ceil(count / cols);
-      return { rows, cols };
-    } else if (mode === 'pair') {
-      const cols = 6; // 2명씩 3개 분단
-      const rows = Math.ceil(count / cols);
-      return { rows, cols };
-    } else { // group (모둠)
-      const cols = 6;
-      const rows = Math.ceil(count / cols);
-      return { rows, cols };
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+      btn.classList.toggle('active', (idx === 0 && tab === 'seat') || (idx === 1 && tab === 'group'));
+    });
+    document.getElementById('seatView').style.display = tab === 'seat' ? 'block' : 'none';
+    document.getElementById('groupView').style.display = tab === 'group' ? 'block' : 'none';
+    document.getElementById('seatOptionBlock').style.display = tab === 'seat' ? 'block' : 'none';
+    document.getElementById('groupOptionBlock').style.display = tab === 'group' ? 'block' : 'none';
+  }
+
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  function runPlacement() {
+    if (activeTab === 'seat') {
+      generateSeats();
+    } else {
+      generateGroups();
     }
   }
 
-  function isValidPlacement(board, rows, cols) {
-    const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]]; // 상하좌우
+  // --- 자리 배치 알고리즘 ---
+  function generateSeats() {
+    const count = parseInt(document.getElementById('totalStudents').value);
+    const mode = document.getElementById('seatType').value;
+    const cols = 6;
+    const rows = Math.ceil(count / cols);
+
+    let attempts = 0;
+    let success = false;
+    let finalBoard = null;
+
+    while (attempts < 10000) {
+      attempts++;
+      let students = shuffle(Array.from({ length: count }, (_, i) => i + 1));
+      let board = Array.from({ length: rows }, () => Array(cols).fill(null));
+      let idx = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (idx < count) board[r][c] = students[idx++];
+        }
+      }
+
+      if (validateSeatRules(board, rows, cols)) {
+        finalBoard = board;
+        success = true;
+        break;
+      }
+    }
+
+    if (!success) {
+      alert("분리 제약 조건을 만족하는 자리를 찾지 못했습니다. 설정된 금지 쌍을 확인해주세요.");
+      return;
+    }
+
+    currentSeats = { board: finalBoard, rows, cols, mode };
+    renderSeats();
+  }
+
+  function validateSeatRules(board, rows, cols) {
+    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const current = board[r][c];
-        if (!current) continue;
-
-        for (const [dr, dc] of directions) {
-          const nr = r + dr;
-          const nc = c + dc;
+        const cur = board[r][c];
+        if (!cur) continue;
+        for (const [dr, dc] of dirs) {
+          const nr = r + dr, nc = c + dc;
           if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-            const neighbor = board[nr][nc];
-            if (!neighbor) continue;
+            const next = board[nr][nc];
+            if (!next) continue;
             for (const [p1, p2] of separatedPairs) {
-              if ((current === p1 && neighbor === p2) || (current === p2 && neighbor === p1)) {
-                return false;
-              }
+              if ((cur === p1 && next === p2) || (cur === p2 && next === p1)) return false;
             }
           }
         }
@@ -292,56 +445,11 @@
     return true;
   }
 
-  function generateSeats() {
-    const count = parseInt(document.getElementById('totalStudents').value);
-    const mode = document.getElementById('seatMode').value;
-    const { rows, cols } = getLayoutDimensions(count, mode);
-
-    let students = Array.from({ length: count }, (_, i) => i + 1);
-    let attempts = 0;
-    let success = false;
-    let bestBoard = null;
-
-    // 분리 제약 조건을 만족할 때까지 셔플 (최대 10,000회 시도)
-    while (attempts < 10000) {
-      attempts++;
-      // Fisher-Yates Shuffle
-      for (let i = students.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [students[i], students[j]] = [students[j], students[i]];
-      }
-
-      let board = Array.from({ length: rows }, () => Array(cols).fill(null));
-      let idx = 0;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (idx < count) {
-            board[r][c] = students[idx++];
-          }
-        }
-      }
-
-      if (isValidPlacement(board, rows, cols)) {
-        bestBoard = board;
-        success = true;
-        break;
-      }
-    }
-
-    if (!success) {
-      alert("지정된 분리 조건이 너무 많아 조건을 완벽히 만족하는 배치를 찾지 못했습니다. 조건을 조절해주세요.");
-      return;
-    }
-
-    currentGrid = bestBoard;
-    renderGrid(bestBoard, rows, cols, mode);
-  }
-
-  function renderGrid(board, rows, cols, mode) {
+  function renderSeats() {
+    const { board, rows, cols, mode } = currentSeats;
     const gridEl = document.getElementById('seatGrid');
     gridEl.innerHTML = '';
-    
-    // 짝꿍 모드일 경우 가운데 통로 간격을 주기 위한 grid-template-columns 설정
+
     if (mode === 'pair') {
       gridEl.style.gridTemplateColumns = 'repeat(2, 80px) 24px repeat(2, 80px) 24px repeat(2, 80px)';
     } else {
@@ -350,45 +458,111 @@
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        // 통로 삽입 처리
         if (mode === 'pair' && (c === 2 || c === 4)) {
           const corridor = document.createElement('div');
           corridor.style.width = '24px';
           gridEl.appendChild(corridor);
         }
-
-        const student = board[r][c];
+        const stu = board[r][c];
         const cell = document.createElement('div');
-        cell.className = `seat ${student ? '' : 'empty'}`;
-        
-        if (student) {
-          cell.innerHTML = `<span class="seat-label">학생</span>${student}번`;
-        } else {
-          cell.innerHTML = `<span class="seat-label">빈자리</span>-`;
-        }
+        cell.className = `seat ${stu ? '' : 'empty'}`;
+        cell.innerHTML = stu ? `<span class="seat-label">학생</span>${stu}번` : `<span class="seat-label">빈자리</span>-`;
         gridEl.appendChild(cell);
       }
     }
   }
 
-  function exportToExcel() {
-    if (!currentGrid || currentGrid.length === 0) {
-      alert("먼저 자리 배치를 실행해주세요.");
+  // --- 모둠 구성 알고리즘 ---
+  function generateGroups() {
+    const count = parseInt(document.getElementById('totalStudents').value);
+    const size = parseInt(document.getElementById('groupSize').value);
+    const numGroups = Math.ceil(count / size);
+
+    let attempts = 0;
+    let success = false;
+    let finalGroups = null;
+
+    while (attempts < 10000) {
+      attempts++;
+      let students = shuffle(Array.from({ length: count }, (_, i) => i + 1));
+      let groups = Array.from({ length: numGroups }, () => []);
+
+      students.forEach((stu, idx) => {
+        groups[idx % numGroups].push(stu);
+      });
+
+      // 모둠 내 분리 조건 검사
+      let valid = true;
+      for (const group of groups) {
+        for (const [p1, p2] of separatedPairs) {
+          if (group.includes(p1) && group.includes(p2)) {
+            valid = false;
+            break;
+          }
+        }
+        if (!valid) break;
+      }
+
+      if (valid) {
+        finalGroups = groups;
+        success = true;
+        break;
+      }
+    }
+
+    if (!success) {
+      alert("분리 조건을 만족하는 모둠을 구성하지 못했습니다. 인원수나 조건을 확인해주세요.");
       return;
     }
 
-    const wsData = [["[ 칠 판 ]"]];
-    currentGrid.forEach(row => {
-      wsData.push(row.map(val => val ? `${val}번` : '빈자리'));
-    });
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, "자리배치");
-    XLSX.writeFile(wb, "학급_자리배치결과.xlsx");
+    currentGroups = finalGroups;
+    renderGroups();
   }
 
-  // 초기 렌더링
+  function renderGroups() {
+    const container = document.getElementById('groupsContainer');
+    container.innerHTML = '';
+
+    currentGroups.forEach((group, idx) => {
+      group.sort((a, b) => a - b);
+      const card = document.createElement('div');
+      card.className = 'group-card';
+      card.innerHTML = `
+        <div class="group-title">${idx + 1} 모둠 (${group.length}명)</div>
+        <div class="group-members">
+          ${group.map(n => `<span class="member-badge">${n}번</span>`).join('')}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  // --- 엑셀 저장 ---
+  function exportToExcel() {
+    const wb = XLSX.utils.book_new();
+
+    if (activeTab === 'seat') {
+      if (!currentSeats) { alert("먼저 자리 배치를 실행해주세요."); return; }
+      const wsData = [["[ 칠 판 ]"]];
+      currentSeats.board.forEach(row => {
+        wsData.push(row.map(n => n ? `${n}번` : '빈자리'));
+      });
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, "자리배치");
+      XLSX.writeFile(wb, "자리배치_결과.xlsx");
+    } else {
+      if (!currentGroups) { alert("먼저 모둠 구성을 실행해주세요."); return; }
+      const wsData = [["모둠명", "학생 번호"]];
+      currentGroups.forEach((grp, idx) => {
+        wsData.push([`${idx + 1}모둠`, grp.map(n => `${n}번`).join(", ")]);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, "모둠구성");
+      XLSX.writeFile(wb, "모둠구성_결과.xlsx");
+    }
+  }
+
+  // 첫 실행 초기화
   generateSeats();
 </script>
 </body>
