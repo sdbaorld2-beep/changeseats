@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학급 자리 & 모둠 관리 시스템</title>
-  <!-- 1버전에서 완벽 작동했던 SheetJS 원본 라이브러리 복구 -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- 안정성이 검증된 Cloudflare CDN 백업 주소로 교체 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
       --primary: #2563eb;
@@ -122,9 +122,10 @@
     }
     .step-indicator {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       font-weight: bold;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
     }
     .step-badge {
       padding: 4px 10px;
@@ -148,6 +149,8 @@
       font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 4px; cursor: pointer;
     }
     .student-tag:hover { background: #d8b4fe; }
+    .student-tag.exclude-tag { background: #fee2e2; color: #b91c1c; }
+    .student-tag.exclude-tag:hover { background: #fecaca; }
 
     /* 자리 배치 뷰 */
     .board-indicator {
@@ -227,15 +230,15 @@
   </div>
 
   <div class="controls">
-    <label>총 인원:
+    <label>마지막 번호:
       <select id="totalStudents" onchange="resetAll()">
-        <option value="24">24명</option>
-        <option value="25">25명</option>
-        <option value="26">26명</option>
-        <option value="27">27명</option>
-        <option value="28" selected>28명</option>
-        <option value="29">29명</option>
-        <option value="30">30명</option>
+        <option value="24">24번까지</option>
+        <option value="25">25번까지</option>
+        <option value="26">26번까지</option>
+        <option value="27">27번까지</option>
+        <option value="28" selected>28번까지</option>
+        <option value="29">29번까지</option>
+        <option value="30">30번까지</option>
       </select>
     </label>
     
@@ -249,23 +252,40 @@
     </div>
 
     <button class="sub-btn" onclick="resetAll()">처음부터 다시</button>
-    <button class="excel-btn" onclick="exportToExcel()">엑셀 다운로드</button>
+    <button class="excel-btn" onclick="exportToExcel()">📥 엑셀 파일 다운로드</button>
   </div>
 
   <!-- 자리 바꾸기 -->
   <div id="seatView">
     <div class="step-banner">
       <div class="step-indicator">
-        <span id="seatBadge1" class="step-badge current" onclick="moveSeatStep(1)">1단계: 고정석 지정</span>
+        <span id="seatBadge0" class="step-badge current" onclick="moveSeatStep(0)">0단계: 전학/결번 제외</span>
+        <span id="seatBadge1" class="step-badge" onclick="moveSeatStep(1)">1단계: 고정석 지정</span>
         <span id="seatBadge2" class="step-badge" onclick="moveSeatStep(2)">2단계: 앞자리 추첨</span>
         <span id="seatBadge3" class="step-badge" onclick="moveSeatStep(3)">3단계: 전체 추첨</span>
       </div>
       
-      <div id="seatStep1" class="step-action-bar">
-        <span style="font-size: 0.85rem; color: #475569;">👉 빈자리를 클릭하여 <strong>무조건 그 자리에 앉을 학생</strong> 번호를 넣으세요.</span>
-        <button onclick="moveSeatStep(2)">2단계로 ➔</button>
+      <!-- 0단계: 결번 설정 -->
+      <div id="seatStep0" class="step-action-bar">
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="excludeInput" placeholder="전학/결번 (예: 4, 17)" style="width: 170px;" onkeypress="if(event.key==='Enter') addExcludeStudents()">
+          <button class="sub-btn" onclick="addExcludeStudents()">결번 등록</button>
+          <span style="font-size: 0.85rem; color: #475569;">실제 자리 배치 대상: <strong id="activeStudentCount" style="color: var(--primary);">28</strong>명</span>
+        </div>
+        <button onclick="moveSeatStep(1)">결번 확정 ➔ 1단계로</button>
+        <div class="tags-container" id="excludeStudentsTags"></div>
       </div>
 
+      <!-- 1단계: 고정석 -->
+      <div id="seatStep1" class="step-action-bar" style="display: none;">
+        <span style="font-size: 0.85rem; color: #475569;">👉 빈자리를 클릭하여 <strong>무조건 그 자리에 앉을 학생</strong> 번호를 넣으세요.</span>
+        <div style="display: flex; gap: 6px;">
+          <button class="sub-btn" onclick="moveSeatStep(0)">⬅ 0단계</button>
+          <button onclick="moveSeatStep(2)">2단계로 ➔</button>
+        </div>
+      </div>
+
+      <!-- 2단계: 앞자리 추첨 -->
       <div id="seatStep2" class="step-action-bar" style="display: none;">
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <input type="text" id="frontInput" placeholder="예: 1 3 5" style="width: 140px;" onkeypress="if(event.key==='Enter') addFrontStudents()">
@@ -283,6 +303,7 @@
         </div>
       </div>
 
+      <!-- 3단계: 전체 추첨 -->
       <div id="seatStep3" class="step-action-bar" style="display: none;">
         <span style="font-size: 0.85rem; color: #475569;">🎉 남은 인원 전체를 무작위로 추첨하여 배치를 완료합니다.</span>
         <div style="display: flex; gap: 6px;">
@@ -375,7 +396,9 @@
   let separatedPairs = [];
   let secretGroupFixed = {};
 
-  let seatStep = 1;
+  // 자리 상태
+  let seatStep = 0;
+  let excludedStudents = []; // 전학/결번 목록
   let seatGridRows = 0, seatGridCols = 0;
   let seatGrid = [];
   let seatFixed = {};
@@ -383,6 +406,7 @@
   let frontStudents = [];
   let frontAssigned = {};
 
+  // 모둠 상태
   let grpStep = 1;
   let groupCapacities = []; 
   let groupAssigned = [];
@@ -450,12 +474,6 @@
     document.getElementById('secFixInput').value = '';
     renderSecretFixList();
   }
-  function removeSecretFix(gIdx, val) {
-    if(secretGroupFixed[gIdx]) {
-      secretGroupFixed[gIdx] = secretGroupFixed[gIdx].filter(n => n !== val);
-      renderSecretFixList();
-    }
-  }
   function renderSecretFixList() {
     let html = '';
     for(let gIdx in secretGroupFixed) {
@@ -489,37 +507,99 @@
   }
 
   /* ================= 자리 탭 로직 ================= */
+  function getActualStudentCount() {
+    const total = parseInt(document.getElementById('totalStudents').value);
+    return Math.max(0, total - excludedStudents.length);
+  }
+
+  function getValidStudentList() {
+    const total = parseInt(document.getElementById('totalStudents').value);
+    const list = [];
+    for (let i = 1; i <= total; i++) {
+      if (!excludedStudents.includes(i)) list.push(i);
+    }
+    return list;
+  }
+
   function resetSeatLayout() {
-    const count = parseInt(document.getElementById('totalStudents').value);
+    const actualCount = getActualStudentCount();
     const mode = document.getElementById('seatType').value;
     seatGridCols = mode === 'single' ? 5 : 6;
-    seatGridRows = Math.ceil(count / seatGridCols);
+    seatGridRows = Math.ceil(actualCount / seatGridCols);
 
     seatGrid = Array.from({ length: seatGridRows }, () => Array(seatGridCols).fill(null));
     seatFixed = {}; frontCandidates.clear(); frontStudents = []; frontAssigned = {};
     document.getElementById('btnRunFront').disabled = false; document.getElementById('btnRunFinal').disabled = false;
-    moveSeatStep(1);
+    moveSeatStep(0);
   }
 
   function moveSeatStep(step) {
     if (isRolling) return;
     seatStep = step;
-    ['seatBadge1', 'seatBadge2', 'seatBadge3'].forEach((id, i) => {
-      document.getElementById(id).className = `step-badge ${i + 1 === step ? 'current' : ''}`;
+    ['seatBadge0', 'seatBadge1', 'seatBadge2', 'seatBadge3'].forEach((id, i) => {
+      document.getElementById(id).className = `step-badge ${i === step ? 'current' : ''}`;
     });
+    document.getElementById('seatStep0').style.display = step === 0 ? 'flex' : 'none';
     document.getElementById('seatStep1').style.display = step === 1 ? 'flex' : 'none';
     document.getElementById('seatStep2').style.display = step === 2 ? 'flex' : 'none';
     document.getElementById('seatStep3').style.display = step === 3 ? 'flex' : 'none';
 
     if (step < 3) { document.getElementById('btnRunFinal').disabled = false; syncSeatGrid(); }
-    if (step === 1) { frontAssigned = {}; document.getElementById('btnRunFront').disabled = false; syncSeatGrid(); }
-    renderSeatGrid(); renderFrontTags();
+    if (step < 2) { frontAssigned = {}; document.getElementById('btnRunFront').disabled = false; syncSeatGrid(); }
+    renderSeatGrid(); renderFrontTags(); renderExcludeTags();
   }
 
   function syncSeatGrid() {
     seatGrid = Array.from({ length: seatGridRows }, () => Array(seatGridCols).fill(null));
     for (let k in seatFixed) { const [r, c] = k.split(','); seatGrid[r][c] = seatFixed[k]; }
     for (let k in frontAssigned) { const [r, c] = k.split(','); seatGrid[r][c] = frontAssigned[k]; }
+  }
+
+  // --- 0단계 결번(제외 번호) 관리 ---
+  function addExcludeStudents() {
+    const total = parseInt(document.getElementById('totalStudents').value);
+    const nums = document.getElementById('excludeInput').value.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+    nums.forEach(val => {
+      if (val > 0 && val <= total && !excludedStudents.includes(val)) {
+        excludedStudents.push(val);
+      }
+    });
+    document.getElementById('excludeInput').value = '';
+    
+    // 결번 변동 시 책상 수 재계산
+    const actualCount = getActualStudentCount();
+    const mode = document.getElementById('seatType').value;
+    seatGridCols = mode === 'single' ? 5 : 6;
+    seatGridRows = Math.ceil(actualCount / seatGridCols);
+    
+    // 기존 고정석 중 결번에 포함된 학생 제거
+    for (let k in seatFixed) {
+      if (excludedStudents.includes(seatFixed[k])) delete seatFixed[k];
+    }
+    syncSeatGrid();
+    renderSeatGrid();
+    renderExcludeTags();
+    initGroupCapacities(); // 모둠 인원도 재동기화
+  }
+
+  function removeExcludeStudent(val) {
+    excludedStudents = excludedStudents.filter(n => n !== val);
+    const actualCount = getActualStudentCount();
+    const mode = document.getElementById('seatType').value;
+    seatGridCols = mode === 'single' ? 5 : 6;
+    seatGridRows = Math.ceil(actualCount / seatGridCols);
+    syncSeatGrid();
+    renderSeatGrid();
+    renderExcludeTags();
+    initGroupCapacities();
+  }
+
+  function renderExcludeTags() {
+    document.getElementById('activeStudentCount').textContent = getActualStudentCount();
+    document.getElementById('excludeStudentsTags').innerHTML = excludedStudents.map(val => `
+      <div class="student-tag exclude-tag" onclick="removeExcludeStudent(${val})">
+        ${val}번 결번 <span>×</span>
+      </div>`).join('');
   }
 
   function handleSeatClick(r, c) {
@@ -533,6 +613,7 @@
       const num = parseInt(prompt("학생 번호:"));
       const total = parseInt(document.getElementById('totalStudents').value);
       if (!num || num < 1 || num > total) return;
+      if (excludedStudents.includes(num)) return alert(`${num}번은 0단계에서 전학/결번 처리된 학생입니다.`);
       if (Object.values(seatFixed).includes(num)) return alert("이미 배정된 학생입니다.");
       seatFixed[key] = num; syncSeatGrid(); renderSeatGrid();
     } else if (seatStep === 2) {
@@ -555,14 +636,14 @@
       gridEl.style.columnGap = '12px';
     }
 
-    const totalCount = parseInt(document.getElementById('totalStudents').value);
+    const actualCount = getActualStudentCount();
     let idx = 0;
     for (let r = 0; r < seatGridRows; r++) {
       for (let c = 0; c < seatGridCols; c++) {
         idx++;
         const cell = document.createElement('div');
         
-        if (idx > totalCount) { 
+        if (idx > actualCount) { 
           cell.className = 'seat'; 
           cell.style.visibility = 'hidden'; 
           cell.style.pointerEvents = 'none'; 
@@ -589,7 +670,7 @@
         } else {
           const isCand = seatStep === 2 && frontCandidates.has(key);
           cell.className += ` seat empty ${isCand ? 'front-candidate' : ''}`;
-          cell.innerHTML = `<span class="seat-label">${seatStep === 1 ? '클릭지정' : (isCand ? '후보좌석' : (seatStep===3?'빈자리':'클릭선택'))}</span>${isCand ? '★' : '-'}`;
+          cell.innerHTML = `<span class="seat-label">${seatStep <= 1 ? '클릭지정' : (isCand ? '후보좌석' : (seatStep===3?'빈자리':'클릭선택'))}</span>${isCand ? '★' : '-'}`;
         }
         cell.onclick = () => handleSeatClick(r, c);
         gridEl.appendChild(cell);
@@ -601,7 +682,9 @@
     const nums = document.getElementById('frontInput').value.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
     const total = parseInt(document.getElementById('totalStudents').value);
     nums.forEach(val => {
-      if (val > 0 && val <= total && !Object.values(seatFixed).includes(val) && !frontStudents.includes(val)) frontStudents.push(val);
+      if (val > 0 && val <= total && !excludedStudents.includes(val) && !Object.values(seatFixed).includes(val) && !frontStudents.includes(val)) {
+        frontStudents.push(val);
+      }
     });
     document.getElementById('frontInput').value = ''; renderFrontTags();
   }
@@ -627,7 +710,8 @@
 
   function runFinalDraw() {
     if (isRolling) return;
-    const totalCount = parseInt(document.getElementById('totalStudents').value);
+    const actualCount = getActualStudentCount();
+    const validStudents = getValidStudentList();
     
     let assigned = new Set();
     let emptys = [];
@@ -636,7 +720,7 @@
     for (let r=0; r<seatGridRows; r++) {
       for(let c=0; c<seatGridCols; c++) {
         idx++;
-        if (idx <= totalCount) { 
+        if (idx <= actualCount) { 
           if (seatGrid[r][c]) assigned.add(seatGrid[r][c]);
           else emptys.push([r,c]);
         }
@@ -644,7 +728,7 @@
     }
     
     let rem = []; 
-    for (let i=1; i<=totalCount; i++) if (!assigned.has(i)) rem.push(i);
+    validStudents.forEach(i => { if (!assigned.has(i)) rem.push(i); });
 
     let bestBoard = null; let minScore = Infinity;
     for (let i = 0; i < 3000; i++) {
@@ -677,7 +761,7 @@
 
   function startSlotAnimation(coords, map, onComplete) {
     isRolling = true;
-    const count = parseInt(document.getElementById('totalStudents').value);
+    const validStudents = getValidStudentList();
     let targets = [];
     
     coords.forEach(([r, c]) => {
@@ -691,7 +775,8 @@
     const timer = setInterval(() => {
       targets.forEach(t => { 
         if (t.el.classList.contains('rolling')) {
-          t.el.innerHTML = `<span class="seat-label">추첨중</span>${Math.floor(Math.random()*count)+1}`; 
+          const randNum = validStudents[Math.floor(Math.random() * validStudents.length)];
+          t.el.innerHTML = `<span class="seat-label">추첨중</span>${randNum}`; 
         }
       });
     }, 60);
@@ -714,10 +799,10 @@
 
   /* ================= 모둠 탭 로직 ================= */
   function initGroupCapacities() {
-    const total = parseInt(document.getElementById('totalStudents').value);
+    const actualCount = getActualStudentCount();
     const gCount = parseInt(document.getElementById('groupCountSelect').value);
-    const base = Math.floor(total / gCount);
-    let rem = total % gCount;
+    const base = Math.floor(actualCount / gCount);
+    let rem = actualCount % gCount;
     
     groupCapacities = Array(gCount).fill(base);
     for (let i = 0; i < rem; i++) groupCapacities[i]++; 
@@ -750,9 +835,9 @@
   }
 
   function renderGroups() {
-    const total = parseInt(document.getElementById('totalStudents').value);
+    const actualCount = getActualStudentCount();
     const sum = groupCapacities.reduce((a, b) => a + b, 0);
-    const diff = total - sum;
+    const diff = actualCount - sum;
     
     const statusEl = document.getElementById('grpStatusLabel');
     if (diff === 0) {
@@ -790,7 +875,8 @@
 
   function runGroupDraw() {
     if (isRolling) return;
-    const total = parseInt(document.getElementById('totalStudents').value);
+    const actualCount = getActualStudentCount();
+    const validStudents = getValidStudentList();
     
     let fixedMap = {};
     let assignedSet = new Set();
@@ -799,7 +885,7 @@
       fixedMap[gIdx] = [];
       if(secretGroupFixed[gIdx]) {
         secretGroupFixed[gIdx].forEach(stu => {
-          if (stu <= total && !assignedSet.has(stu) && fixedMap[gIdx].length < groupCapacities[gIdx]) {
+          if (validStudents.includes(stu) && !assignedSet.has(stu) && fixedMap[gIdx].length < groupCapacities[gIdx]) {
             fixedMap[gIdx].push(stu);
             assignedSet.add(stu);
           }
@@ -808,7 +894,7 @@
     }
 
     let rem = [];
-    for (let i = 1; i <= total; i++) if (!assignedSet.has(i)) rem.push(i);
+    validStudents.forEach(i => { if (!assignedSet.has(i)) rem.push(i); });
 
     let bestBoard = null; let minScore = Infinity;
     for (let iter = 0; iter < 3000; iter++) {
@@ -845,7 +931,8 @@
         const el = document.getElementById(`gslot-${gi}-${sj}`);
         if (el && !el.classList.contains('locked')) {
           el.className = 'g-slot rolling';
-          el.textContent = Math.floor(Math.random() * total) + 1;
+          const rand = validStudents[Math.floor(Math.random() * validStudents.length)];
+          el.textContent = rand;
         }
       });
     }, 60);
@@ -868,45 +955,60 @@
     setTimeout(lockNext, 500);
   }
 
-  /* ================= SheetJS 기반 엑셀 다운로드 복구 ================= */
+  /* ================= 엑셀 다운로드 (정식 엔진 + 백업 자동 작동) ================= */
   function exportToExcel() {
     if (isRolling) return alert("추첨 종료 후 다운로드 가능합니다.");
-    if (typeof XLSX === 'undefined') return alert("엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결 상태를 확인해주세요.");
 
-    const wb = XLSX.utils.book_new();
+    const mode = document.getElementById('seatType').value;
 
+    // 1. 데이터 가공
+    let sheetData = [];
     if (activeTab === 'seat') {
-      const mode = document.getElementById('seatType').value;
-      const wsData = [["[ 교탁 / 칠판 ]"]];
-      
+      sheetData.push(["[ 교탁 / 칠판 ]"]);
       seatGrid.forEach(row => {
         let rowData = [];
         row.forEach((val, c) => {
-          // 짝꿍 모드일 때 엑셀에서도 분단 사이에 빈 열을 삽입하여 시각화
-          if (mode === 'pair' && (c === 2 || c === 4)) {
-            rowData.push(""); 
-          }
+          if (mode === 'pair' && (c === 2 || c === 4)) rowData.push(""); 
           rowData.push(val ? `${val}번` : "");
         });
-        wsData.push(rowData);
+        sheetData.push(rowData);
       });
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "자리배치");
-      XLSX.writeFile(wb, "학급_자리배치결과.xlsx");
     } else {
       if (groupAssigned.length === 0) return alert("모둠 추첨 완료 후 엑셀 다운로드가 가능합니다.");
-      
-      const wsData = [["모둠", "학생 명단"]];
+      sheetData.push(["모둠", "학생 명단"]);
       groupAssigned.forEach((g, i) => {
         const sorted = [...g].sort((a, b) => a - b);
-        wsData.push([`${i + 1}모둠`, sorted.map(n => `${n}번`).join(', ')]);
+        sheetData.push([`${i + 1}모둠`, sorted.map(n => `${n}번`).join(', ')]);
       });
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "모둠배치");
-      XLSX.writeFile(wb, "학급_모둠구성결과.xlsx");
     }
+
+    const fileName = activeTab === 'seat' ? "학급_자리배치결과" : "학급_모둠구성결과";
+
+    // 2. SheetJS 라이브러리 가동 시도 (.xlsx 생성)
+    if (typeof XLSX !== 'undefined') {
+      try {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, "배치결과");
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
+        return;
+      } catch (err) {
+        console.warn("SheetJS 실행 차단 감지, 비상 내보내기로 전환합니다.", err);
+      }
+    }
+
+    // 3. 만약 네트워크/보안 차단으로 라이브러리 실행 불가 시 브라우저 자체 CSV 백업 다운로드
+    let csvContent = "\uFEFF"; // 한글 깨짐 방지 BOM
+    sheetData.forEach(row => {
+      csvContent += row.map(v => `"${v}"`).join(",") + "\r\n";
+    });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `${fileName}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   resetAll();
