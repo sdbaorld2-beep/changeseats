@@ -31,16 +31,16 @@
       width: 100%;
       background: var(--card);
       border-radius: 14px;
-      padding: 20px;
+      padding: 24px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
     .header {
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
     h1 {
       margin: 0;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       display: inline-block;
     }
     .secret-trigger {
@@ -52,13 +52,13 @@
       display: flex;
       gap: 8px;
       border-bottom: 2px solid #e2e8f0;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
     .tab-btn {
       padding: 8px 16px;
       border: none;
       background: none;
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-weight: bold;
       color: #64748b;
       cursor: pointer;
@@ -72,17 +72,17 @@
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
       justify-content: center;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
       background: #f1f5f9;
-      padding: 12px;
+      padding: 14px;
       border-radius: 8px;
     }
     select, button, input {
-      padding: 7px 12px;
-      font-size: 0.9rem;
+      padding: 8px 12px;
+      font-size: 0.95rem;
       border: 1px solid var(--border);
       border-radius: 6px;
       outline: none;
@@ -103,25 +103,25 @@
     button.sub-btn { background-color: #64748b; }
     button.sub-btn:hover { background-color: #475569; }
 
-    /* 단계별 워크플로우 배너 */
+    /* 단계별 배너 */
     .step-banner {
       background: #eff6ff;
       border: 1px solid #bfdbfe;
       border-radius: 8px;
-      padding: 12px;
+      padding: 14px;
       margin-bottom: 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
     .step-indicator {
       display: flex;
       gap: 8px;
       font-weight: bold;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
     .step-badge {
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 6px;
       background: #e2e8f0;
       color: #475569;
@@ -133,14 +133,33 @@
       background: var(--primary);
       color: white;
     }
-
     .step-action-bar {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 12px;
     }
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      width: 100%;
+    }
+    .student-tag {
+      background: #e9d5ff;
+      color: #6b21a8;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .student-tag:hover { background: #d8b4fe; }
 
     /* 자리 배치 영역 */
     .board-indicator {
@@ -176,35 +195,16 @@
       color: #1e40af;
       cursor: pointer;
       position: relative;
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: all 0.25s;
       box-shadow: 0 2px 4px rgba(0,0,0,0.04);
       user-select: none;
     }
-    .seat.empty {
-      background: #ffffff;
-      border: 2px dashed #cbd5e1;
-      color: #94a3b8;
-    }
-    .seat.empty:hover {
-      border-color: var(--primary);
-      background: #f8fafc;
-    }
-    /* 2단계에서 앞자리 후보로 선택된 자리 */
-    .seat.front-candidate {
-      background: #faf5ff;
-      border: 2px solid #a855f7;
-      color: #7e22ce;
-    }
-    .seat.fixed {
-      background: #fef3c7;
-      border-color: var(--fixed);
-      color: #b45309;
-    }
-    .seat.front-assigned {
-      background: #f3e8ff;
-      border-color: var(--front);
-      color: #6b21a8;
-    }
+    .seat.empty { background: #ffffff; border: 2px dashed #cbd5e1; color: #94a3b8; }
+    .seat.empty:hover { border-color: var(--primary); background: #f8fafc; }
+    .seat.front-candidate { background: #faf5ff; border: 2px solid #a855f7; color: #7e22ce; }
+    .seat.fixed { background: #fef3c7; border-color: var(--fixed); color: #b45309; }
+    .seat.front-assigned { background: #f3e8ff; border-color: var(--front); color: #6b21a8; }
+    
     .seat.rolling {
       background: #fef08a !important;
       border-color: #f59e0b !important;
@@ -212,19 +212,10 @@
       transform: scale(1.06);
       animation: pulse 0.18s infinite alternate;
     }
-    .seat.locked {
-      animation: popIn 0.3s ease-out;
-    }
-    .seat-label {
-      font-size: 0.68rem;
-      color: #64748b;
-      margin-bottom: 2px;
-    }
+    .seat.locked { animation: popIn 0.3s ease-out; }
+    .seat-label { font-size: 0.68rem; color: #64748b; margin-bottom: 2px; }
 
-    @keyframes pulse {
-      from { transform: scale(1.02); }
-      to { transform: scale(1.08); }
-    }
+    @keyframes pulse { from { transform: scale(1.02); } to { transform: scale(1.08); } }
     @keyframes popIn {
       0% { transform: scale(0.6); opacity: 0.5; }
       70% { transform: scale(1.15); }
@@ -238,71 +229,23 @@
       gap: 14px;
       margin-top: 14px;
     }
-    .group-card {
-      background: #f8fafc;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 14px;
-    }
-    .group-title {
-      font-weight: bold;
-      color: var(--primary);
-      margin-bottom: 8px;
-      text-align: center;
-      font-size: 1rem;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 4px;
-    }
-    .group-members {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: center;
-    }
-    .member-badge {
-      background: #e0e7ff;
-      color: #3730a3;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
+    .group-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+    .group-title { font-weight: bold; color: var(--primary); margin-bottom: 8px; text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+    .group-members { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .member-badge { background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; }
 
     /* 비밀 모달 */
     .modal-overlay {
       display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000;
     }
     .modal-overlay.active { display: flex; }
-    .modal {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      width: 360px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-    }
-    .modal h2 { margin-top: 0; font-size: 1.15rem; color: #dc2626; }
-    .rules-list {
-      margin-top: 8px;
-      max-height: 120px;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-      padding: 6px;
-      border-radius: 6px;
-    }
-    .rule-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 6px;
-      border-bottom: 1px solid #f1f5f9;
-      font-size: 0.85rem;
-    }
+    .modal { background: white; padding: 24px; border-radius: 12px; width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); }
+    .modal h2 { margin-top: 0; font-size: 1.2rem; color: #dc2626; margin-bottom: 8px; }
+    .rules-list { margin-top: 12px; max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 8px; border-radius: 6px; background: #f8fafc; }
+    .rule-item { display: flex; justify-content: space-between; align-items: center; padding: 6px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+    .rule-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
@@ -329,7 +272,6 @@
         <option value="30">30명</option>
       </select>
     </label>
-
     <div id="seatOptionBlock">
       <label>형태:
         <select id="seatType" onchange="resetSeatLayout()">
@@ -338,7 +280,6 @@
         </select>
       </label>
     </div>
-
     <div id="groupOptionBlock" style="display: none;">
       <label>모둠당:
         <select id="groupSize">
@@ -348,9 +289,8 @@
           <option value="6">6명씩</option>
         </select>
       </label>
-      <button onclick="generateGroups()">모둠 편성 실행</button>
+      <button onclick="generateGroups()">🎲 모둠 편성 실행</button>
     </div>
-
     <button class="sub-btn" onclick="resetSeatLayout()">처음부터 다시</button>
     <button class="excel-btn" onclick="exportToExcel()">엑셀 다운로드</button>
   </div>
@@ -364,38 +304,38 @@
         <span id="badgeStep3" class="step-badge" onclick="moveToStep(3)">3단계: 전체 추첨</span>
       </div>
       
-      <!-- 1단계 바 -->
+      <!-- 1단계 -->
       <div id="step1Controls" class="step-action-bar">
-        <span style="font-size: 0.85rem; color: #475569;">
-          👉 <strong>지정석 설정:</strong> 앉힐 자리를 클릭하고 학생 번호를 입력하세요.
+        <span style="font-size: 0.9rem; color: #475569;">
+          👉 <strong>고정 지정석:</strong> 아래 배치도에서 자리를 클릭하고 학생 번호를 입력하세요.
         </span>
-        <div>
-          <button onclick="moveToStep(2)">다음 (2단계) ➔</button>
+        <button onclick="moveToStep(2)">다음 (2단계) ➔</button>
+      </div>
+
+      <!-- 2단계 -->
+      <div id="step2Controls" class="step-action-bar" style="display: none; flex-direction: column;">
+        <div style="display: flex; gap: 8px; align-items: center; width: 100%; justify-content: space-between;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="frontInput" placeholder="예: 1 3 5 (띄어쓰기 입력)" style="width: 200px;" onkeypress="if(event.key==='Enter') addFrontStudents()">
+            <button onclick="addFrontStudents()">학생 추가</button>
+            <span style="font-size: 0.85rem; color: #64748b;">(자리를 직접 클릭해 추첨 대상 자리를 고르세요)</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="sub-btn" onclick="moveToStep(1)">⬅ 1단계로</button>
+            <button id="btnRunFront" onclick="runFrontDraw()">🎲 앞자리 추첨!</button>
+            <button onclick="moveToStep(3)">다음 (3단계) ➔</button>
+          </div>
+        </div>
+        <div class="tags-container" id="frontStudentsTags"></div>
+        <div style="font-size: 0.85rem; color: #7e22ce; font-weight: bold; text-align: right; width: 100%;">
+          선택된 후보 자리: <span id="frontSeatCountLabel">0</span>개
         </div>
       </div>
 
-      <!-- 2단계 바 -->
-      <div id="step2Controls" class="step-action-bar" style="display: none;">
-        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-          <input type="number" id="frontInput" placeholder="희망 학생 번호" style="width: 110px;">
-          <button onclick="addFrontStudent()">학생 추가</button>
-          <span style="font-size: 0.82rem; color: #64748b;">(자리를 직접 클릭해 후보 좌석을 정하세요)</span>
-        </div>
-        <div style="display: flex; gap: 6px;">
-          <button class="sub-btn" onclick="moveToStep(1)">⬅ 1단계로</button>
-          <button id="btnRunFront" onclick="runFrontDraw()">🎲 앞자리 추첨!</button>
-          <button onclick="moveToStep(3)">다음 (3단계) ➔</button>
-        </div>
-        <div style="width: 100%; font-size: 0.85rem; display: flex; justify-content: space-between; margin-top: 4px;">
-          <span id="frontListLabel" style="color: var(--front); font-weight: bold;">학생: 0명</span>
-          <span id="frontSeatCountLabel" style="color: #7e22ce; font-weight: bold;">선택된 후보 자리: 0개</span>
-        </div>
-      </div>
-
-      <!-- 3단계 바 -->
+      <!-- 3단계 -->
       <div id="step3Controls" class="step-action-bar" style="display: none;">
-        <span style="font-size: 0.85rem; color: #475569;">
-          🎉 남은 자리들을 대상으로 무작위 배치를 진행합니다.
+        <span style="font-size: 0.9rem; color: #475569;">
+          🎉 남은 자리들을 대상으로 무작위 전체 추첨이 진행됩니다.
         </span>
         <div style="display: flex; gap: 6px;">
           <button class="sub-btn" onclick="moveToStep(2)">⬅ 2단계로</button>
@@ -408,23 +348,26 @@
     <div id="seatGrid" class="seat-grid"></div>
   </div>
 
-  <!-- 모둠 구성 화면 -->
+  <!-- 모둠 화면 -->
   <div id="groupView" style="display: none;">
     <div id="groupsContainer" class="groups-wrapper"></div>
   </div>
 </div>
 
-<!-- 비밀 모달 (선생님만 아는 F2 창) -->
+<!-- 시크릿 모달 (여러 명 분리 지원) -->
 <div id="secretModal" class="modal-overlay">
   <div class="modal">
-    <h2>🔒 격리 설정</h2>
+    <h2>🔒 분리 그룹 설정 (교사 전용)</h2>
+    <p style="font-size: 0.82rem; color: #64748b; line-height: 1.4; margin-bottom: 12px;">
+      서로 떨어뜨려 놓을 학생 번호들을 입력하세요.<br>
+      (예: <strong>3 8</strong> 입력 시 2명 분리, <strong>1 4 9</strong> 입력 시 3명 모두 뿔뿔이 분리)
+    </p>
     <div style="display: flex; gap: 6px;">
-      <input type="number" id="stuA" placeholder="번호 1" style="width: 70px;">
-      <input type="number" id="stuB" placeholder="번호 2" style="width: 70px;">
-      <button type="button" onclick="addPairRule()">등록</button>
+      <input type="text" id="secretGroupInput" placeholder="예: 2, 7, 10" style="flex: 1;" onkeypress="if(event.key==='Enter') addSecretRule()">
+      <button type="button" onclick="addSecretRule()">등록</button>
     </div>
-    <div class="rules-list" id="pairRulesList"></div>
-    <div style="text-align: right; margin-top: 12px;">
+    <div class="rules-list" id="secretRulesList"></div>
+    <div style="text-align: right; margin-top: 14px;">
       <button type="button" onclick="toggleModal(false)">닫기</button>
     </div>
   </div>
@@ -435,58 +378,64 @@
   let currentStep = 1;
   let isRolling = false;
 
-  let separatedPairs = [];      // 비밀 격리 쌍
-  let fixedStudents = {};       // 1단계 지정석 { "r,c": 번호 }
-  let frontCandidates = new Set(); // 2단계 선생님이 클릭해 정한 앞자리 후보 좌석 좌표 문자열 Set "r,c"
-  let frontStudents = [];       // 2단계 앞자리 희망 학생 목록 [번호, 번호]
-  let frontAssigned = {};       // 2단계 추첨 완료된 학생 { "r,c": 번호 }
+  let separatedPairs = []; // [a, b] 형태의 튜플 리스트
+  let fixedStudents = {}; 
+  let frontCandidates = new Set();
+  let frontStudents = [];
+  let frontAssigned = {};
 
   let gridRows = 0;
   let gridCols = 0;
   let currentGrid = [];
 
-  // F2 또는 . 3번 클릭 트리거
+  // F2 또는 . 3번 클릭
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'F2') {
-      e.preventDefault();
-      toggleModal(true);
-    }
+    if (e.key === 'F2') { e.preventDefault(); toggleModal(true); }
   });
 
   let clickCount = 0, clickTimer = null;
   document.getElementById('secretTrigger').addEventListener('click', () => {
-    clickCount++;
-    clearTimeout(clickTimer);
-    if (clickCount >= 3) {
-      toggleModal(true);
-      clickCount = 0;
-    } else {
-      clickTimer = setTimeout(() => { clickCount = 0; }, 400);
-    }
+    clickCount++; clearTimeout(clickTimer);
+    if (clickCount >= 3) { toggleModal(true); clickCount = 0; }
+    else { clickTimer = setTimeout(() => { clickCount = 0; }, 400); }
   });
 
-  function toggleModal(show) {
-    document.getElementById('secretModal').classList.toggle('active', show);
-  }
+  function toggleModal(show) { document.getElementById('secretModal').classList.toggle('active', show); }
 
-  function addPairRule() {
-    const a = parseInt(document.getElementById('stuA').value);
-    const b = parseInt(document.getElementById('stuB').value);
-    if (!a || !b || a === b) return;
-    if (!separatedPairs.some(([p1, p2]) => (p1 === a && p2 === b) || (p1 === b && p2 === a))) {
-      separatedPairs.push([Math.min(a, b), Math.max(a, b)]);
-      updatePairUI();
+  // 비밀 그룹 분리 (여러 명 동시 찢기)
+  function addSecretRule() {
+    const input = document.getElementById('secretGroupInput').value;
+    const nums = input.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0);
+    if (nums.length < 2) { alert("2명 이상의 번호를 입력해주세요."); return; }
+    
+    // 유니크한 번호만 추려서 모든 2인 조합 생성
+    const uniqueNums = [...new Set(nums)];
+    let added = 0;
+    for (let i = 0; i < uniqueNums.length; i++) {
+      for (let j = i + 1; j < uniqueNums.length; j++) {
+        const a = Math.min(uniqueNums[i], uniqueNums[j]);
+        const b = Math.max(uniqueNums[i], uniqueNums[j]);
+        if (!separatedPairs.some(p => p[0] === a && p[1] === b)) {
+          separatedPairs.push([a, b]);
+          added++;
+        }
+      }
     }
-    document.getElementById('stuA').value = '';
-    document.getElementById('stuB').value = '';
+    document.getElementById('secretGroupInput').value = '';
+    updateSecretUI();
   }
 
-  function updatePairUI() {
-    const el = document.getElementById('pairRulesList');
+  function removeSecretRule(index) {
+    separatedPairs.splice(index, 1);
+    updateSecretUI();
+  }
+
+  function updateSecretUI() {
+    const el = document.getElementById('secretRulesList');
     el.innerHTML = separatedPairs.map(([a, b], i) => `
       <div class="rule-item">
-        <span>${a}번 ⟷ ${b}번 분리</span>
-        <button style="padding: 2px 6px; font-size: 0.75rem; background:#ef4444;" onclick="separatedPairs.splice(${i},1);updatePairUI();">삭제</button>
+        <span><strong>${a}번</strong> ↔ <strong>${b}번</strong> 거리 분리</span>
+        <button style="padding: 2px 8px; font-size: 0.75rem; background:#ef4444;" onclick="removeSecretRule(${i})">삭제</button>
       </div>`).join('');
   }
 
@@ -510,11 +459,10 @@
     return arr;
   }
 
-  // --- 단계 이동 및 전환 ---
+  // --- 단계 이동 ---
   function moveToStep(step) {
     if (isRolling) return;
     currentStep = step;
-
     ['badgeStep1', 'badgeStep2', 'badgeStep3'].forEach((id, idx) => {
       const el = document.getElementById(id);
       el.className = 'step-badge';
@@ -525,30 +473,25 @@
     document.getElementById('step2Controls').style.display = step === 2 ? 'flex' : 'none';
     document.getElementById('step3Controls').style.display = step === 3 ? 'flex' : 'none';
 
-    // 2단계 이전으로 돌아가면 3단계 추첨 결과 초기화
     if (step < 3) {
       document.getElementById('btnRunFinal').disabled = false;
       syncCurrentGridWithPreserved();
     }
-    // 1단계로 돌아가면 2단계 배정 결과 초기화(재추첨 가능하도록)
     if (step === 1) {
       frontAssigned = {};
       document.getElementById('btnRunFront').disabled = false;
       syncCurrentGridWithPreserved();
     }
-
     renderGrid();
-    updateFrontLabels();
+    renderFrontTags();
   }
 
   function syncCurrentGridWithPreserved() {
     currentGrid = Array.from({ length: gridRows }, () => Array(gridCols).fill(null));
-    // 1단계 고정석 복구
     for (let key in fixedStudents) {
       const [r, c] = key.split(',').map(Number);
       currentGrid[r][c] = fixedStudents[key];
     }
-    // 2단계 배정석 복구
     for (let key in frontAssigned) {
       const [r, c] = key.split(',').map(Number);
       currentGrid[r][c] = frontAssigned[key];
@@ -570,85 +513,52 @@
 
     document.getElementById('btnRunFront').disabled = false;
     document.getElementById('btnRunFinal').disabled = false;
-
     moveToStep(1);
   }
 
-  // --- 좌석 클릭 핸들러 ---
   function handleSeatClick(r, c) {
     if (isRolling) return;
     const key = `${r},${c}`;
 
-    // [1단계 클릭]: 지정석 배정 또는 해제
     if (currentStep === 1) {
       if (fixedStudents[key]) {
-        if (confirm(`${fixedStudents[key]}번 학생의 지정석을 취소할까요?`)) {
+        if (confirm(`지정석(${fixedStudents[key]}번) 배정을 취소할까요?`)) {
           delete fixedStudents[key];
           currentGrid[r][c] = null;
           renderGrid();
         }
         return;
       }
-
-      const input = prompt("이 자리에 앉힐 학생 번호를 입력하세요:");
+      const input = prompt("이 자리에 지정할 학생 번호를 입력하세요:");
       if (!input) return;
       const num = parseInt(input);
       const total = parseInt(document.getElementById('totalStudents').value);
-
-      if (isNaN(num) || num < 1 || num > total) {
-        alert(`1부터 ${total} 사이의 번호를 입력해주세요.`);
-        return;
-      }
-
-      for (let k in fixedStudents) {
-        if (fixedStudents[k] === num) {
-          alert(`${num}번 학생은 이미 다른 자리에 지정되어 있습니다.`);
-          return;
-        }
-      }
+      if (isNaN(num) || num < 1 || num > total) { alert("올바른 번호를 입력해주세요."); return; }
+      if (Object.values(fixedStudents).includes(num)) { alert("이미 지정된 학생입니다."); return; }
 
       fixedStudents[key] = num;
       currentGrid[r][c] = num;
       renderGrid();
-    }
-
-    // [2단계 클릭]: 앞자리 후보석 지정 또는 해제
+    } 
     else if (currentStep === 2) {
-      // 1단계 지정석은 건드릴 수 없음
-      if (fixedStudents[key]) {
-        alert("1단계에서 이미 지정석으로 선택된 자리입니다.");
-        return;
-      }
-      // 이미 2단계 추첨이 끝난 상태라면 클릭 차단
-      if (Object.keys(frontAssigned).length > 0) return;
+      if (fixedStudents[key]) return alert("1단계 고정석은 변경할 수 없습니다.");
+      if (Object.keys(frontAssigned).length > 0) return; // 이미 추첨 완료 시 막음
 
-      if (frontCandidates.has(key)) {
-        frontCandidates.delete(key);
-      } else {
-        frontCandidates.add(key);
-      }
+      if (frontCandidates.has(key)) frontCandidates.delete(key);
+      else frontCandidates.add(key);
+      
       renderGrid();
-      updateFrontLabels();
+      document.getElementById('frontSeatCountLabel').textContent = frontCandidates.size;
     }
-  }
-
-  function updateFrontLabels() {
-    document.getElementById('frontListLabel').textContent = 
-      frontStudents.length > 0 ? `희망 학생 (${frontStudents.length}명): [ ${frontStudents.join(', ')}번 ]` : `희망 학생: 0명`;
-    document.getElementById('frontSeatCountLabel').textContent = 
-      `선택된 후보 자리: ${frontCandidates.size}개`;
   }
 
   function renderGrid() {
     const mode = document.getElementById('seatType').value;
     const gridEl = document.getElementById('seatGrid');
     gridEl.innerHTML = '';
-
-    if (mode === 'pair') {
-      gridEl.style.gridTemplateColumns = 'repeat(2, 82px) 20px repeat(2, 82px) 20px repeat(2, 82px)';
-    } else {
-      gridEl.style.gridTemplateColumns = `repeat(${gridCols}, 82px)`;
-    }
+    
+    if (mode === 'pair') gridEl.style.gridTemplateColumns = 'repeat(2, 82px) 20px repeat(2, 82px) 20px repeat(2, 82px)';
+    else gridEl.style.gridTemplateColumns = `repeat(${gridCols}, 82px)`;
 
     const totalCount = parseInt(document.getElementById('totalStudents').value);
     let seatIndex = 0;
@@ -663,11 +573,12 @@
 
         seatIndex++;
         const cell = document.createElement('div');
+        cell.dataset.r = r;
+        cell.dataset.c = c;
         const key = `${r},${c}`;
         const stu = currentGrid[r][c];
-        const isSeatValid = seatIndex <= totalCount;
-
-        if (!isSeatValid) {
+        
+        if (seatIndex > totalCount) {
           cell.className = 'seat empty';
           cell.style.visibility = 'hidden';
           gridEl.appendChild(cell);
@@ -679,62 +590,65 @@
           cell.className = `seat ${isFixed ? 'fixed' : 'front-assigned'}`;
           cell.innerHTML = `<span class="seat-label">${isFixed ? '지정석' : '우선석'}</span>${stu}번`;
         } else {
-          // 2단계에서 후보석으로 마킹된 좌석
           const isCandidate = currentStep === 2 && frontCandidates.has(key);
           cell.className = `seat empty ${isCandidate ? 'front-candidate' : ''}`;
-          
-          let labelText = '빈자리';
-          if (currentStep === 1) labelText = '클릭지정';
-          else if (currentStep === 2) labelText = isCandidate ? '후보좌석' : '클릭선택';
-
+          let labelText = currentStep === 1 ? '클릭지정' : (isCandidate ? '후보좌석' : '클릭선택');
+          if (currentStep === 3) labelText = '빈자리';
           cell.innerHTML = `<span class="seat-label">${labelText}</span>${isCandidate ? '★' : '-'}`;
         }
-
+        
         cell.onclick = () => handleSeatClick(r, c);
         gridEl.appendChild(cell);
       }
     }
   }
 
-  // --- 2단계: 앞자리 학생 추가 & 추첨 ---
-  function addFrontStudent() {
-    const val = parseInt(document.getElementById('frontInput').value);
+  // --- 2단계 다중 학생 추가 ---
+  function addFrontStudents() {
+    const inputStr = document.getElementById('frontInput').value;
+    const nums = inputStr.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
     const total = parseInt(document.getElementById('totalStudents').value);
-    if (!val || val < 1 || val > total) return;
 
-    for (let k in fixedStudents) {
-      if (fixedStudents[k] === val) {
-        alert(`${val}번 학생은 이미 1단계 지정석에 배치되어 있습니다.`);
-        return;
+    let addedCount = 0;
+    nums.forEach(val => {
+      if (val > 0 && val <= total) {
+        if (Object.values(fixedStudents).includes(val)) return;
+        if (!frontStudents.includes(val)) {
+          frontStudents.push(val);
+          addedCount++;
+        }
       }
-    }
-    if (frontStudents.includes(val)) {
-      alert(`${val}번 학생은 이미 추가되었습니다.`);
-      return;
-    }
+    });
 
-    frontStudents.push(val);
+    if (addedCount === 0 && nums.length > 0) alert("유효하지 않거나 이미 지정된 번호입니다.");
     document.getElementById('frontInput').value = '';
-    updateFrontLabels();
+    renderFrontTags();
+  }
+
+  function removeFrontStudent(val) {
+    frontStudents = frontStudents.filter(n => n !== val);
+    renderFrontTags();
+  }
+
+  function renderFrontTags() {
+    const container = document.getElementById('frontStudentsTags');
+    container.innerHTML = frontStudents.map(val => `
+      <div class="student-tag" onclick="removeFrontStudent(${val})">
+        ${val}번 <span>×</span>
+      </div>
+    `).join('');
+    document.getElementById('frontSeatCountLabel').textContent = frontCandidates.size;
   }
 
   function runFrontDraw() {
-    if (frontStudents.length === 0) {
-      alert("앞자리 추첨에 참여할 학생 번호를 먼저 추가해주세요.");
-      return;
-    }
-    if (frontCandidates.size < frontStudents.length) {
-      alert(`선택된 후보 좌석(${frontCandidates.size}개)이 학생 수(${frontStudents.length}명)보다 적습니다. 자리를 더 클릭해 선택해주세요.`);
-      return;
-    }
+    if (frontStudents.length === 0) return alert("추첨할 학생 번호를 먼저 추가해주세요.");
+    if (frontCandidates.size < frontStudents.length) return alert(`후보 좌석(${frontCandidates.size}개)이 학생 수(${frontStudents.length}명)보다 부족합니다.`);
 
-    // 후보 좌석 중 학생 수만큼 무작위 선택
     const candidateArray = shuffle(Array.from(frontCandidates)).slice(0, frontStudents.length);
     const shuffledStudents = shuffle([...frontStudents]);
 
     const assignedMap = {};
     const coords = [];
-
     candidateArray.forEach((coordStr, idx) => {
       const [r, c] = coordStr.split(',').map(Number);
       coords.push([r, c]);
@@ -752,7 +666,19 @@
     });
   }
 
-  // --- 3단계: 나머지 전체 무작위 추첨 ---
+  // --- 3단계 전체 최적화 추첨 (점수 기반 알고리즘) ---
+  function getDistanceScore(pos1, pos2) {
+    if (!pos1 || !pos2) return 0;
+    const rDist = Math.abs(pos1.r - pos2.r);
+    const cDist = Math.abs(pos1.c - pos2.c);
+    const dist = rDist + cDist;
+    if (dist <= 1) return 2000; // 완전 인접
+    if (rDist <= 1 && cDist <= 1) return 1000; // 대각선 인접
+    if (dist === 2) return 300; // 2칸 거리
+    if (dist === 3) return 50;  // 3칸 거리
+    return 0; // 충분히 멂
+  }
+
   function runFinalDraw() {
     if (isRolling) return;
     const count = parseInt(document.getElementById('totalStudents').value);
@@ -780,81 +706,62 @@
       }
     }
 
-    let attempts = 0;
-    let validFinalBoard = null;
+    // 최적 배치 찾기 (무작위 탐색 알고리즘)
+    let bestBoard = null;
+    let minScore = Infinity;
 
-    while (attempts < 15000) {
-      attempts++;
+    for (let attempts = 0; attempts < 3000; attempts++) {
       let tempBoard = currentGrid.map(row => [...row]);
       let shuffledRem = shuffle([...remainingStudents]);
-
-      emptyCoords.forEach(([r, c], idx) => {
-        tempBoard[r][c] = shuffledRem[idx];
-      });
-
-      if (validateBoardRules(tempBoard)) {
-        validFinalBoard = tempBoard;
-        break;
+      let positions = {};
+      
+      // 기존 학생 위치 기록
+      for (let r = 0; r < gridRows; r++) {
+        for (let c = 0; c < gridCols; c++) {
+          if (tempBoard[r][c]) positions[tempBoard[r][c]] = {r, c};
+        }
       }
-    }
-
-    // 분리 제약 조건을 만족하지 못하더라도 추첨이 멈추지 않도록 처리
-    if (!validFinalBoard) {
-      validFinalBoard = currentGrid.map(row => [...row]);
-      let fallbackRem = shuffle([...remainingStudents]);
+      
+      // 남은 학생 배치 및 위치 기록
       emptyCoords.forEach(([r, c], idx) => {
-        validFinalBoard[r][c] = fallbackRem[idx];
+        const stu = shuffledRem[idx];
+        tempBoard[r][c] = stu;
+        positions[stu] = {r, c};
       });
+
+      // 점수 계산 (페널티가 낮을수록 좋음)
+      let score = 0;
+      for (let [p1, p2] of separatedPairs) {
+        score += getDistanceScore(positions[p1], positions[p2]);
+      }
+
+      if (score < minScore) {
+        minScore = score;
+        bestBoard = tempBoard;
+      }
+      if (minScore === 0) break; // 완벽한 분리 성공 시 조기 종료
     }
 
     const assignedMap = {};
     emptyCoords.forEach(([r, c]) => {
-      assignedMap[`${r},${c}`] = validFinalBoard[r][c];
+      assignedMap[`${r},${c}`] = bestBoard[r][c];
     });
 
     startSlotAnimation(emptyCoords, assignedMap, () => {
-      currentGrid = validFinalBoard;
+      currentGrid = bestBoard;
       document.getElementById('btnRunFinal').disabled = true;
     });
   }
 
-  function validateBoardRules(board) {
-    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-    for (let r = 0; r < gridRows; r++) {
-      for (let c = 0; c < gridCols; c++) {
-        const cur = board[r][c];
-        if (!cur) continue;
-        for (const [dr, dc] of dirs) {
-          const nr = r + dr, nc = c + dc;
-          if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols) {
-            const next = board[nr][nc];
-            if (!next) continue;
-            for (const [p1, p2] of separatedPairs) {
-              if ((cur === p1 && next === p2) || (cur === p2 && next === p1)) return false;
-            }
-          }
-        }
-      }
-    }
-    return true;
-  }
-
-  // --- 긴장감 있는 롤링 & 순차 록온 공통 연출 ---
+  // --- 슬롯 애니메이션 ---
   function startSlotAnimation(coords, assignedMap, onComplete) {
     isRolling = true;
     const gridEl = document.getElementById('seatGrid');
-    const seatCells = gridEl.querySelectorAll('.seat');
-    const mode = document.getElementById('seatType').value;
     const count = parseInt(document.getElementById('totalStudents').value);
-
     const targetCellObjs = [];
+
     coords.forEach(([r, c]) => {
-      let domIdx = r * gridCols + c;
-      if (mode === 'pair') {
-        const corridorCount = (c >= 2 ? 1 : 0) + (c >= 4 ? 1 : 0);
-        domIdx = r * (gridCols + 2) + c + corridorCount;
-      }
-      const cell = seatCells[domIdx];
+      const cell = gridEl.querySelector(`.seat[data-r='${r}'][data-c='${c}']`);
       if (cell) {
         cell.className = 'seat rolling';
         targetCellObjs.push({ cell, stu: assignedMap[`${r},${c}`] });
@@ -864,8 +771,7 @@
     const rollTimer = setInterval(() => {
       targetCellObjs.forEach(({ cell }) => {
         if (cell.classList.contains('rolling')) {
-          const rand = Math.floor(Math.random() * count) + 1;
-          cell.innerHTML = `<span class="seat-label">추첨중</span>${rand}`;
+          cell.innerHTML = `<span class="seat-label">추첨중</span>${Math.floor(Math.random() * count) + 1}`;
         }
       });
     }, 60);
@@ -881,106 +787,74 @@
         if (onComplete) onComplete();
         return;
       }
-
       const { cell, stu } = shuffledTargets[lockedCount];
       cell.classList.remove('rolling');
       cell.classList.add('locked');
       cell.innerHTML = `<span class="seat-label">학생</span>${stu}번`;
 
       lockedCount++;
-      const delay = 60 + Math.pow(lockedCount / total, 2) * 150;
-      setTimeout(lockNext, delay);
+      setTimeout(lockNext, 60 + Math.pow(lockedCount / total, 2) * 150);
     };
-
     setTimeout(lockNext, 600);
   }
 
-  // --- 모둠 구성 ---
+  // --- 모둠 구성 (거리 점수 적용) ---
   function generateGroups() {
     const count = parseInt(document.getElementById('totalStudents').value);
     const size = parseInt(document.getElementById('groupSize').value);
     const numGroups = Math.ceil(count / size);
 
-    let attempts = 0;
-    let finalGroups = null;
+    let bestGroups = null;
+    let minScore = Infinity;
 
-    while (attempts < 10000) {
-      attempts++;
+    for (let attempts = 0; attempts < 3000; attempts++) {
       let students = shuffle(Array.from({ length: count }, (_, i) => i + 1));
       let groups = Array.from({ length: numGroups }, () => []);
-
-      students.forEach((stu, idx) => {
-        groups[idx % numGroups].push(stu);
-      });
-
-      let valid = true;
-      for (const group of groups) {
-        for (const [p1, p2] of separatedPairs) {
-          if (group.includes(p1) && group.includes(p2)) {
-            valid = false;
-            break;
-          }
-        }
-        if (!valid) break;
-      }
-
-      if (valid) {
-        finalGroups = groups;
-        break;
-      }
-    }
-
-    if (!finalGroups) {
-      finalGroups = Array.from({ length: numGroups }, () => []);
-      let students = shuffle(Array.from({ length: count }, (_, i) => i + 1));
       students.forEach((stu, idx) => groups[idx % numGroups].push(stu));
+
+      let score = 0;
+      for (const [p1, p2] of separatedPairs) {
+        for (const group of groups) {
+          if (group.includes(p1) && group.includes(p2)) score += 1000;
+        }
+      }
+
+      if (score < minScore) {
+        minScore = score;
+        bestGroups = groups;
+      }
+      if (minScore === 0) break;
     }
 
     const container = document.getElementById('groupsContainer');
-    container.innerHTML = '';
-    finalGroups.forEach((group, idx) => {
+    container.innerHTML = bestGroups.map((group, idx) => {
       group.sort((a, b) => a - b);
-      const card = document.createElement('div');
-      card.className = 'group-card';
-      card.innerHTML = `
+      return `<div class="group-card">
         <div class="group-title">${idx + 1} 모둠 (${group.length}명)</div>
-        <div class="group-members">
-          ${group.map(n => `<span class="member-badge">${n}번</span>`).join('')}
-        </div>
-      `;
-      container.appendChild(card);
-    });
+        <div class="group-members">${group.map(n => `<span class="member-badge">${n}번</span>`).join('')}</div>
+      </div>`;
+    }).join('');
   }
 
-  // --- 엑셀 내보내기 ---
+  // --- 엑셀 저장 ---
   function exportToExcel() {
-    if (isRolling) {
-      alert("추첨이 완료된 후 다운로드할 수 있습니다.");
-      return;
-    }
+    if (isRolling) return alert("추첨이 완료된 후 다운로드할 수 있습니다.");
     const wb = XLSX.utils.book_new();
 
     if (activeTab === 'seat') {
       const wsData = [["[ 교탁 / 칠판 ]"]];
-      currentGrid.forEach(row => {
-        wsData.push(row.map(n => n ? `${n}번` : '빈자리'));
-      });
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "자리배치");
+      currentGrid.forEach(row => wsData.push(row.map(n => n ? `${n}번` : '빈자리')));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "자리배치");
       XLSX.writeFile(wb, "자리배치_최종.xlsx");
     } else {
       const cards = document.querySelectorAll('.group-card');
-      if (cards.length === 0) {
-        alert("먼저 모둠 편성을 실행해주세요.");
-        return;
-      }
+      if (cards.length === 0) return alert("먼저 모둠 편성을 실행해주세요.");
       const wsData = [["모둠", "명단"]];
       cards.forEach((card, idx) => {
         const text = Array.from(card.querySelectorAll('.member-badge')).map(b => b.textContent).join(', ');
         wsData.push([`${idx + 1}모둠`, text]);
       });
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "모둠배치");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "모둠배치");
       XLSX.writeFile(wb, "모둠배치_최종.xlsx");
     }
   }
