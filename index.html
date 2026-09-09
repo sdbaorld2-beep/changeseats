@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학급 자리 & 모둠 관리 시스템</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --primary: #2563eb;
@@ -148,7 +147,7 @@
     }
     .student-tag:hover { background: #d8b4fe; }
 
-    /* 자리 배치 뷰 */
+    /* 자리 배치 */
     .board-indicator {
       text-align: center; padding: 6px; background: #334155; color: #f8fafc;
       border-radius: 6px; font-weight: bold; margin: 12px auto; max-width: 320px;
@@ -156,9 +155,9 @@
     }
     .seat-grid { 
       display: grid; 
-      gap: 10px; 
       justify-content: center; 
       margin-top: 10px; 
+      row-gap: 10px;
     }
     .seat {
       width: 80px; height: 65px; background: #eff6ff; border: 2px solid #bfdbfe;
@@ -175,11 +174,6 @@
     .seat.rolling { background: #fef08a !important; border-color: #f59e0b !important; color: #b45309 !important; transform: scale(1.05); }
     .seat.locked { animation: popIn 0.3s ease-out; }
     .seat-label { font-size: 0.65rem; color: #64748b; margin-bottom: 2px; }
-
-    /* 짝꿍 모드 분단 통로 여백 */
-    .seat.aisle-right {
-      margin-right: 20px;
-    }
 
     @keyframes popIn { 0% { transform: scale(0.6); opacity: 0.5; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
 
@@ -454,12 +448,6 @@
     document.getElementById('secFixInput').value = '';
     renderSecretFixList();
   }
-  function removeSecretFix(gIdx, val) {
-    if(secretGroupFixed[gIdx]) {
-      secretGroupFixed[gIdx] = secretGroupFixed[gIdx].filter(n => n !== val);
-      renderSecretFixList();
-    }
-  }
   function renderSecretFixList() {
     let html = '';
     for(let gIdx in secretGroupFixed) {
@@ -552,7 +540,13 @@
     const gridEl = document.getElementById('seatGrid');
     gridEl.innerHTML = '';
     
-    gridEl.style.gridTemplateColumns = `repeat(${seatGridCols}, 80px)`;
+    // 짝꿍 모드일 때 2자리-통로-2자리-통로-2자리 명확한 그리드 정의
+    if (mode === 'pair') {
+      gridEl.style.gridTemplateColumns = '80px 80px 32px 80px 80px 32px 80px 80px';
+    } else {
+      gridEl.style.gridTemplateColumns = 'repeat(5, 80px)';
+      gridEl.style.columnGap = '12px';
+    }
 
     const totalCount = parseInt(document.getElementById('totalStudents').value);
     let idx = 0;
@@ -569,8 +563,12 @@
           continue; 
         }
 
-        if (mode === 'pair' && (c === 1 || c === 3)) {
-          cell.classList.add('aisle-right');
+        // CSS Grid 컬럼 배치 (짝꿍 모드 통로 칸 건너뛰기)
+        if (mode === 'pair') {
+          // c: 0,1 -> 1,2열 / c: 2,3 -> 4,5열 / c: 4,5 -> 7,8열
+          const colIndex = c + 1 + Math.floor(c / 2);
+          cell.style.gridColumn = `${colIndex}`;
+          cell.style.gridRow = `${r + 1}`;
         }
 
         cell.setAttribute('data-r', r);
@@ -581,11 +579,11 @@
 
         if (stu) {
           const isFixed = seatFixed[key];
-          cell.className += ` seat ${isFixed ? 'fixed' : 'front-assigned'}`;
+          cell.className = `seat ${isFixed ? 'fixed' : 'front-assigned'}`;
           cell.innerHTML = `<span class="seat-label">${isFixed ? '지정석' : '우선석'}</span>${stu}번`;
         } else {
           const isCand = seatStep === 2 && frontCandidates.has(key);
-          cell.className += ` seat empty ${isCand ? 'front-candidate' : ''}`;
+          cell.className = `seat empty ${isCand ? 'front-candidate' : ''}`;
           cell.innerHTML = `<span class="seat-label">${seatStep === 1 ? '클릭지정' : (isCand ? '후보좌석' : (seatStep===3?'빈자리':'클릭선택'))}</span>${isCand ? '★' : '-'}`;
         }
         cell.onclick = () => handleSeatClick(r, c);
@@ -865,29 +863,80 @@
     setTimeout(lockNext, 500);
   }
 
+  /* ================= 엑셀 다운로드 (라이브러리 미의존 네이티브 방식) ================= */
   function exportToExcel() {
     if (isRolling) return alert("추첨 종료 후 다운로드 가능합니다.");
-    const wb = XLSX.utils.book_new();
+
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+        <x:Name>${activeTab === 'seat' ? '자리배치' : '모둠구성'}</x:Name>
+        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+        <style>
+          td, th { text-align: center; vertical-align: middle; height: 32px; font-size: 11pt; }
+          .title { font-weight: bold; background-color: #334155; color: #ffffff; height: 38px; }
+          .seat-cell { border: 1px solid #cbd5e1; background-color: #f1f5f9; width: 85px; }
+          .corridor { width: 25px; background-color: #ffffff; }
+        </style>
+      </head>
+      <body>
+    `;
 
     if (activeTab === 'seat') {
-      const wsData = [["[ 교탁 / 칠판 ]"]];
+      const mode = document.getElementById('seatType').value;
+      const totalColspan = mode === 'pair' ? 8 : seatGridCols;
+      
+      html += `<table>`;
+      html += `<tr><th colspan="${totalColspan}" class="title">[ 교 탁 / 칠 판 ]</th></tr>`;
+      html += `<tr><td colspan="${totalColspan}" style="height:12px;"></td></tr>`;
+
       seatGrid.forEach(row => {
-        let rowData = [];
-        row.forEach(val => { if(val) rowData.push(`${val}번`); else rowData.push('빈자리'); });
-        wsData.push(rowData);
+        html += `<tr>`;
+        row.forEach((val, c) => {
+          // 짝꿍 모드일 경우 통로 빈 열 추가
+          if (mode === 'pair' && (c === 2 || c === 4)) {
+            html += `<td class="corridor"></td>`;
+          }
+          const text = val ? `${val}번` : '';
+          html += `<td class="seat-cell">${text}</td>`;
+        });
+        html += `</tr>`;
       });
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "자리배치");
-      XLSX.writeFile(wb, "자리배치_최종.xlsx");
+      html += `</table>`;
+
+      downloadBlobFile(html, "자리배치_최종.xls");
     } else {
       if (groupAssigned.length === 0) return alert("모둠 추첨 완료 후 엑셀 다운로드가 가능합니다.");
-      const wsData = [["모둠", "명단"]];
+      
+      html += `<table border="1">`;
+      html += `<tr><th style="background-color:#e2e8f0; width:100px;">모둠</th><th style="background-color:#e2e8f0; width:300px;">학생 명단</th></tr>`;
+      
       groupAssigned.forEach((g, i) => {
-        const sorted = [...g].sort((a,b)=>a-b);
-        wsData.push([`${i + 1}모둠`, sorted.map(n=>`${n}번`).join(', ')]);
+        const sorted = [...g].sort((a, b) => a - b);
+        html += `<tr>`;
+        html += `<td><strong>${i + 1}모둠</strong></td>`;
+        html += `<td>${sorted.map(n => `${n}번`).join(', ')}</td>`;
+        html += `</tr>`;
       });
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "모둠배치");
-      XLSX.writeFile(wb, "모둠배치_최종.xlsx");
+      html += `</table>`;
+
+      downloadBlobFile(html, "모둠배치_최종.xls");
     }
+  }
+
+  function downloadBlobFile(htmlContent, fileName) {
+    htmlContent += `</body></html>`;
+    const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   resetAll();
