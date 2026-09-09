@@ -73,7 +73,7 @@
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 10px;
       justify-content: center;
       align-items: center;
       margin-bottom: 16px;
@@ -105,6 +105,8 @@
     button:disabled { background-color: #94a3b8; cursor: not-allowed; transform: none; }
     button.excel-btn { background-color: #059669; }
     button.excel-btn:hover { background-color: #047857; }
+    button.copy-btn { background-color: #4f46e5; }
+    button.copy-btn:hover { background-color: #4338ca; }
     button.sub-btn { background-color: #64748b; }
     button.sub-btn:hover { background-color: #475569; }
 
@@ -147,7 +149,7 @@
     }
     .student-tag:hover { background: #d8b4fe; }
 
-    /* 자리 배치 */
+    /* 자리 배치 뷰 */
     .board-indicator {
       text-align: center; padding: 6px; background: #334155; color: #f8fafc;
       border-radius: 6px; font-weight: bold; margin: 12px auto; max-width: 320px;
@@ -247,7 +249,8 @@
     </div>
 
     <button class="sub-btn" onclick="resetAll()">처음부터 다시</button>
-    <button class="excel-btn" onclick="exportToExcel()">엑셀 다운로드</button>
+    <button class="excel-btn" onclick="exportData('download')">📥 엑셀(CSV) 저장</button>
+    <button class="copy-btn" onclick="exportData('copy')">📋 엑셀로 복사</button>
   </div>
 
   <!-- 자리 바꾸기 -->
@@ -448,6 +451,12 @@
     document.getElementById('secFixInput').value = '';
     renderSecretFixList();
   }
+  function removeSecretFix(gIdx, val) {
+    if(secretGroupFixed[gIdx]) {
+      secretGroupFixed[gIdx] = secretGroupFixed[gIdx].filter(n => n !== val);
+      renderSecretFixList();
+    }
+  }
   function renderSecretFixList() {
     let html = '';
     for(let gIdx in secretGroupFixed) {
@@ -540,7 +549,6 @@
     const gridEl = document.getElementById('seatGrid');
     gridEl.innerHTML = '';
     
-    // 짝꿍 모드일 때 2자리-통로-2자리-통로-2자리 명확한 그리드 정의
     if (mode === 'pair') {
       gridEl.style.gridTemplateColumns = '80px 80px 32px 80px 80px 32px 80px 80px';
     } else {
@@ -563,9 +571,7 @@
           continue; 
         }
 
-        // CSS Grid 컬럼 배치 (짝꿍 모드 통로 칸 건너뛰기)
         if (mode === 'pair') {
-          // c: 0,1 -> 1,2열 / c: 2,3 -> 4,5열 / c: 4,5 -> 7,8열
           const colIndex = c + 1 + Math.floor(c / 2);
           cell.style.gridColumn = `${colIndex}`;
           cell.style.gridRow = `${r + 1}`;
@@ -579,11 +585,11 @@
 
         if (stu) {
           const isFixed = seatFixed[key];
-          cell.className = `seat ${isFixed ? 'fixed' : 'front-assigned'}`;
+          cell.className += ` seat ${isFixed ? 'fixed' : 'front-assigned'}`;
           cell.innerHTML = `<span class="seat-label">${isFixed ? '지정석' : '우선석'}</span>${stu}번`;
         } else {
           const isCand = seatStep === 2 && frontCandidates.has(key);
-          cell.className = `seat empty ${isCand ? 'front-candidate' : ''}`;
+          cell.className += ` seat empty ${isCand ? 'front-candidate' : ''}`;
           cell.innerHTML = `<span class="seat-label">${seatStep === 1 ? '클릭지정' : (isCand ? '후보좌석' : (seatStep===3?'빈자리':'클릭선택'))}</span>${isCand ? '★' : '-'}`;
         }
         cell.onclick = () => handleSeatClick(r, c);
@@ -863,80 +869,86 @@
     setTimeout(lockNext, 500);
   }
 
-  /* ================= 엑셀 다운로드 (라이브러리 미의존 네이티브 방식) ================= */
-  function exportToExcel() {
-    if (isRolling) return alert("추첨 종료 후 다운로드 가능합니다.");
+  /* ================= 내보내기 통합 로직 (CSV 다운로드 & 엑셀 클립보드 복사) ================= */
+  function exportData(type) {
+    if (isRolling) return alert("추첨 종료 후 이용 가능합니다.");
 
-    let html = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
-        <x:Name>${activeTab === 'seat' ? '자리배치' : '모둠구성'}</x:Name>
-        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-        <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
-        <style>
-          td, th { text-align: center; vertical-align: middle; height: 32px; font-size: 11pt; }
-          .title { font-weight: bold; background-color: #334155; color: #ffffff; height: 38px; }
-          .seat-cell { border: 1px solid #cbd5e1; background-color: #f1f5f9; width: 85px; }
-          .corridor { width: 25px; background-color: #ffffff; }
-        </style>
-      </head>
-      <body>
-    `;
+    let csvContent = "";
+    let tsvContent = ""; // 엑셀 붙여넣기용 (탭 구분)
 
     if (activeTab === 'seat') {
       const mode = document.getElementById('seatType').value;
-      const totalColspan = mode === 'pair' ? 8 : seatGridCols;
-      
-      html += `<table>`;
-      html += `<tr><th colspan="${totalColspan}" class="title">[ 교 탁 / 칠 판 ]</th></tr>`;
-      html += `<tr><td colspan="${totalColspan}" style="height:12px;"></td></tr>`;
+      csvContent += "[ 교탁 / 칠판 ]\n\n";
+      tsvContent += "[ 교탁 / 칠판 ]\n\n";
 
       seatGrid.forEach(row => {
-        html += `<tr>`;
+        let rowCsv = [];
+        let rowTsv = [];
         row.forEach((val, c) => {
-          // 짝꿍 모드일 경우 통로 빈 열 추가
           if (mode === 'pair' && (c === 2 || c === 4)) {
-            html += `<td class="corridor"></td>`;
+            rowCsv.push(""); // 통로 빈칸
+            rowTsv.push("");
           }
-          const text = val ? `${val}번` : '';
-          html += `<td class="seat-cell">${text}</td>`;
+          const text = val ? `${val}번` : "";
+          rowCsv.push(`"${text}"`);
+          rowTsv.push(text);
         });
-        html += `</tr>`;
+        csvContent += rowCsv.join(",") + "\n";
+        tsvContent += rowTsv.join("\t") + "\n";
       });
-      html += `</table>`;
 
-      downloadBlobFile(html, "자리배치_최종.xls");
+      if (type === 'download') {
+        saveAsCsvFile(csvContent, "학급_자리배치결과.csv");
+      } else {
+        copyToClipboard(tsvContent, "자리 배치표가 복사되었습니다!\n엑셀 프로그램을 열고 Ctrl + V를 누르세요.");
+      }
     } else {
-      if (groupAssigned.length === 0) return alert("모둠 추첨 완료 후 엑셀 다운로드가 가능합니다.");
+      if (groupAssigned.length === 0) return alert("모둠 추첨 완료 후 내보내기가 가능합니다.");
       
-      html += `<table border="1">`;
-      html += `<tr><th style="background-color:#e2e8f0; width:100px;">모둠</th><th style="background-color:#e2e8f0; width:300px;">학생 명단</th></tr>`;
-      
+      csvContent += "모둠,학생 명단\n";
+      tsvContent += "모둠\t학생 명단\n";
+
       groupAssigned.forEach((g, i) => {
         const sorted = [...g].sort((a, b) => a - b);
-        html += `<tr>`;
-        html += `<td><strong>${i + 1}모둠</strong></td>`;
-        html += `<td>${sorted.map(n => `${n}번`).join(', ')}</td>`;
-        html += `</tr>`;
+        const memberStr = sorted.map(n => `${n}번`).join(", ");
+        csvContent += `"${i + 1}모둠","${memberStr}"\n`;
+        tsvContent += `${i + 1}모둠\t${memberStr}\n`;
       });
-      html += `</table>`;
 
-      downloadBlobFile(html, "모둠배치_최종.xls");
+      if (type === 'download') {
+        saveAsCsvFile(csvContent, "학급_모둠구성결과.csv");
+      } else {
+        copyToClipboard(tsvContent, "모둠 명단이 복사되었습니다!\n엑셀 프로그램을 열고 Ctrl + V를 누르세요.");
+      }
     }
   }
 
-  function downloadBlobFile(htmlContent, fileName) {
-    htmlContent += `</body></html>`;
-    const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  function saveAsCsvFile(content, fileName) {
+    // UTF-8 BOM(\uFEFF)을 넣어 엑셀에서 바로 열어도 한글이 깨지지 않음
+    const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  function copyToClipboard(text, successMsg) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(successMsg);
+    }).catch(err => {
+      // 클립보드 권한 이슈 발생 시 대체 방식
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      alert(successMsg);
+    });
   }
 
   resetAll();
